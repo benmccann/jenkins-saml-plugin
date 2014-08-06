@@ -8,7 +8,7 @@ Copyright 2014 Connectifier, Inc. All Rights Reserved.
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.548</version>
+    <version>1.574</version>
   </parent>
 
   <artifactId>saml-plugin</artifactId>
