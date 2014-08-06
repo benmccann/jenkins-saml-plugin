@@ -8,7 +8,7 @@
       <f:textbox />
     </f:entry>
     <f:entry title="Certificate"  field="certificate">
-      <f:textbox />
+      <f:password />
     </f:entry>
   </f:section>
 </j:jelly>
