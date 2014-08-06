@@ -36,7 +36,7 @@ public class SamlSecurityRealm extends SecurityRealm {
 
   private static final Logger LOG = Logger.getLogger(SamlSecurityRealm.class.getName());
   private static final String REFERER_ATTRIBUTE = SamlSecurityRealm.class.getName()+".referer";
-  private static final String CONSUMER_SERVICE_URL = Jenkins.getInstance().getRootUrl() + "securityRealm/finishLogin";
+  private static final String CONSUMER_SERVICE_URL_PATH = "securityRealm/finishLogin";
 
   static final String ISSUER = "Jenkins CI";
 
@@ -84,9 +84,10 @@ public class SamlSecurityRealm extends SecurityRealm {
    * /securityRealm/commenceLogin
    */
   public HttpResponse doCommenceLogin(StaplerRequest request, @Header("Referer") final String referer) {
-    LOG.info("SamlSecurityRealm.doCommenceLogin called");
-    request.getSession().setAttribute(REFERER_ATTRIBUTE,referer);
-    String redirectUrl = new SamlRequestGenerator().createRequestUrl(signOnUrl, CONSUMER_SERVICE_URL);
+    String consumerServiceUrl = Jenkins.getInstance().getRootUrl() + CONSUMER_SERVICE_URL_PATH;
+    LOG.info("SamlSecurityRealm.doCommenceLogin called. Using consumerServiceUrl " + consumerServiceUrl);
+    request.getSession().setAttribute(REFERER_ATTRIBUTE, referer);
+    String redirectUrl = new SamlRequestGenerator().createRequestUrl(signOnUrl, consumerServiceUrl);
     return new HttpRedirect(redirectUrl);
   }
 
