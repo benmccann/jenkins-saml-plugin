@@ -82,7 +82,7 @@ public class SamlSecurityRealm extends SecurityRealm {
    * /securityRealm/commenceLogin
    */
   public HttpResponse doCommenceLogin(StaplerRequest request, @Header("Referer") final String referer) {
-    LOG.info("SamlSecurityRealm.doCommenceLogin called. Using consumerServiceUrl " + getConsumerServiceUrl());
+    LOG.fine("SamlSecurityRealm.doCommenceLogin called. Using consumerServiceUrl " + getConsumerServiceUrl());
     request.getSession().setAttribute(REFERER_ATTRIBUTE, referer);
     String redirectUrl = new SamlRequestGenerator()
         .createRequestUrl(signOnUrl, getConsumerServiceUrl(), Jenkins.getInstance().getRootUrl());
@@ -93,12 +93,13 @@ public class SamlSecurityRealm extends SecurityRealm {
    * /securityRealm/finishLogin
    */
   public HttpResponse doFinishLogin(StaplerRequest request, StaplerResponse response) {
-    LOG.info("SamlSecurityRealm.doFinishLogin called");
+    LOG.finer("SamlSecurityRealm.doFinishLogin called");
     Preconditions.checkNotNull(certificate);
     SamlResponseHandler responseHandler = new SamlResponseHandler(certificate);
     SamlAuthenticationToken samlAuthToken = responseHandler.handle(request.getParameter("SAMLResponse"));
 
     LOG.info("Received SAML response with status code " + samlAuthToken.getStatusCode()
+        + ", subject " + samlAuthToken.getSubject()
         + ", issuer " + samlAuthToken.getIssuer()
         + ", audience " + samlAuthToken.getAudience());
 
