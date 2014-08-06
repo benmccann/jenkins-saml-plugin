@@ -129,7 +129,7 @@ public class SamlSecurityRealm extends SecurityRealm {
 
     @Override
     public String getDisplayName() {
-      return "SAML Authentication Plugin";
+      return "SAML 2.0";
     }
 
   }
