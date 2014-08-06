@@ -35,7 +35,7 @@ import org.opensaml.xml.util.XMLHelper;
 import org.w3c.dom.Element;
 
 public class SamlRequestGenerator {
-  
+
   static {
     try {
       DefaultBootstrap.bootstrap();
@@ -44,7 +44,7 @@ public class SamlRequestGenerator {
     }
   }
 
-  public String createRequestUrl(String baseUrl, String consumerServiceUrl) {
+  public String createRequestUrl(String ipdBaseUrl, String consumerServiceUrl, String requestIssuer) {
     AuthnRequestBuilder authRequestBuilder = new AuthnRequestBuilder();
     AuthnRequest authnRequest = authRequestBuilder.buildObject(SAMLConstants.SAML20P_NS, "AuthnRequest", "samlp");
     authnRequest.setIsPassive(false);
@@ -56,7 +56,7 @@ public class SamlRequestGenerator {
 
     IssuerBuilder issuerBuilder = new IssuerBuilder();
     Issuer issuer = issuerBuilder.buildObject(SAMLConstants.SAML20_NS, "Issuer", "samlp" );
-    issuer.setValue(SamlSecurityRealm.ISSUER);
+    issuer.setValue(requestIssuer);
     authnRequest.setIssuer(issuer);
 
     NameIDPolicyBuilder nameIdPolicyBuilder = new NameIDPolicyBuilder();
@@ -96,7 +96,7 @@ public class SamlRequestGenerator {
       byteArrayOutputStream.close();
       String base64SamlRequest = new String(new Base64().encode(byteArrayOutputStream.toByteArray())).trim();
 
-      return baseUrl + "?SAMLRequest=" + URLEncoder.encode(base64SamlRequest, "UTF-8");
+      return ipdBaseUrl + "?SAMLRequest=" + URLEncoder.encode(base64SamlRequest, "UTF-8");
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }

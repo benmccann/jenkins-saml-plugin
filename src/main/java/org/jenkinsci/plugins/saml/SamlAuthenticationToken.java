@@ -14,7 +14,7 @@ public class SamlAuthenticationToken extends AbstractAuthenticationToken {
   private final String audience;
   private final String subject;
 
-  public SamlAuthenticationToken(String statusCode, String subject, String issuer, String audience) {
+  public SamlAuthenticationToken(String statusCode, String issuer, String audience, String subject) {
     super(new GrantedAuthority[] {});
     this.statusCode = statusCode;
     this.issuer = issuer;

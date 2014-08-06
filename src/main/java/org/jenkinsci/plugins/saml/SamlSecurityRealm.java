@@ -38,8 +38,6 @@ public class SamlSecurityRealm extends SecurityRealm {
   private static final String REFERER_ATTRIBUTE = SamlSecurityRealm.class.getName()+".referer";
   private static final String CONSUMER_SERVICE_URL_PATH = "securityRealm/finishLogin";
 
-  static final String ISSUER = "Jenkins CI";
-
   private String signOnUrl;
 
   private String certificate;
@@ -84,10 +82,10 @@ public class SamlSecurityRealm extends SecurityRealm {
    * /securityRealm/commenceLogin
    */
   public HttpResponse doCommenceLogin(StaplerRequest request, @Header("Referer") final String referer) {
-    String consumerServiceUrl = Jenkins.getInstance().getRootUrl() + CONSUMER_SERVICE_URL_PATH;
-    LOG.info("SamlSecurityRealm.doCommenceLogin called. Using consumerServiceUrl " + consumerServiceUrl);
+    LOG.info("SamlSecurityRealm.doCommenceLogin called. Using consumerServiceUrl " + getConsumerServiceUrl());
     request.getSession().setAttribute(REFERER_ATTRIBUTE, referer);
-    String redirectUrl = new SamlRequestGenerator().createRequestUrl(signOnUrl, consumerServiceUrl);
+    String redirectUrl = new SamlRequestGenerator()
+        .createRequestUrl(signOnUrl, getConsumerServiceUrl(), Jenkins.getInstance().getRootUrl());
     return new HttpRedirect(redirectUrl);
   }
 
@@ -100,9 +98,12 @@ public class SamlSecurityRealm extends SecurityRealm {
     SamlResponseHandler responseHandler = new SamlResponseHandler(certificate);
     SamlAuthenticationToken samlAuthToken = responseHandler.handle(request.getParameter("SAMLResponse"));
 
-    LOG.info("Received SAML response with issuer " + samlAuthToken.getIssuer()
-        + " and audience " + samlAuthToken.getAudience());
-    Preconditions.checkState(samlAuthToken.getIssuer().equals(ISSUER));
+    LOG.info("Received SAML response with status code " + samlAuthToken.getStatusCode()
+        + ", issuer " + samlAuthToken.getIssuer()
+        + ", audience " + samlAuthToken.getAudience());
+
+    Preconditions.checkState(samlAuthToken.getStatusCode().toLowerCase().contains("success"),
+        "Expected success but got " + samlAuthToken.getStatusCode());
 
     SecurityContextHolder.getContext().setAuthentication(samlAuthToken);
     SecurityListener.fireAuthenticated(new SamlUserDetails(samlAuthToken.getSubject()));
@@ -111,6 +112,10 @@ public class SamlSecurityRealm extends SecurityRealm {
     return HttpResponses.redirectTo(referer);
   }
 
+  private String getConsumerServiceUrl() {
+    return Jenkins.getInstance().getRootUrl() + CONSUMER_SERVICE_URL_PATH;
+  }
+  
   public String getSignOnUrl() {
     return signOnUrl;
   }

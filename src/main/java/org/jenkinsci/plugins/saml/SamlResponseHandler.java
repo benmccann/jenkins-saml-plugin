@@ -82,7 +82,7 @@ public class SamlResponseHandler {
       String audience = assertion.getConditions().getAudienceRestrictions().get(0).getAudiences().get(0).getAudienceURI();
       String statusCode = responseObj.getStatus().getStatusCode().getValue();
 
-      return new SamlAuthenticationToken(subject, issuer, audience, statusCode);
+      return new SamlAuthenticationToken(statusCode, issuer, audience, subject);
     } catch (UnsupportedEncodingException e) {
       throw new IllegalStateException(e);
     } catch (CertificateException e) {
