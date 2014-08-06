@@ -3,6 +3,7 @@
 package org.jenkinsci.plugins.saml;
 
 import hudson.Extension;
+import hudson.Util;
 import hudson.model.Descriptor;
 import hudson.security.SecurityRealm;
 
@@ -16,6 +17,7 @@ import org.acegisecurity.AuthenticationException;
 import org.acegisecurity.AuthenticationManager;
 import org.acegisecurity.BadCredentialsException;
 import org.acegisecurity.context.SecurityContextHolder;
+import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Header;
 import org.kohsuke.stapler.HttpRedirect;
 import org.kohsuke.stapler.HttpResponse;
@@ -42,7 +44,15 @@ public class SamlSecurityRealm extends SecurityRealm {
 
   private String certificate;
 
-  public SamlSecurityRealm() {
+  /**
+   * Jenkins passes these parameters in when you update the settings.
+   * It does this because of the @DataBoundConstructor
+   */
+  @DataBoundConstructor
+  public SamlSecurityRealm(String signOnUrl, String certificate) {
+    super();
+    this.signOnUrl = Util.fixEmptyAndTrim(signOnUrl);
+    this.certificate = Util.fixEmptyAndTrim(certificate);
   }
 
   @Override
