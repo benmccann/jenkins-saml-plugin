@@ -30,6 +30,13 @@ Copyright 2014 Connectifier, Inc. All Rights Reserved.
     </license>
   </licenses>
 
+  <developers>
+    <developer>
+      <id>benmccann</id>
+      <name>Ben McCann</name>
+    </developer>
+  </developers>
+
   <repositories>
     <repository>
       <id>repo.jenkins-ci.org</id>
