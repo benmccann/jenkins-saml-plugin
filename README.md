@@ -18,6 +18,7 @@ Example of configuring your IdP such as Okta or OneLogin
  * Postback URL: http://localhost:8080/jenkins/securityRealm/finishLogin
  * Recipient: http://localhost:8080/jenkins/securityRealm/finishLogin
  * Audience Restriction: http://localhost:8080/jenkins/
+ * Destination: http://localhost:8080/jenkins/securityRealm/finishLogin
 
 
 Local development
