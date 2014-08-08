@@ -35,9 +35,9 @@ under the License.
   <url>http://wiki.jenkins-ci.org/display/JENKINS/SAML+Plugin</url>
 
   <scm>
-    <connection>scm:git:ssh://github.com/connectifier/jenkins-saml-plugin.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com:connectifier/jenkins-saml-plugin.git</developerConnection>
-    <url>https://github.com/connectifier/jenkins-saml-plugin</url>
+    <connection>scm:git:ssh://github.com/jenkinsci/saml-plugin.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com:jenkinsci/saml-plugin.git</developerConnection>
+    <url>https://github.com/jenkinsci/saml-plugin</url>
   </scm>
   
   <licenses>
