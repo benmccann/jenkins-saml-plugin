@@ -26,3 +26,9 @@ Local development
 
 Run `mvn hpi:run` and visit http://localhost:8080/jenkins/.
 You will see the plugin under the "Installed" tab in the Jenkins plugin manager.
+
+Releasing
+-------------------
+
+Create ~/.m2/settings.xml per https://wiki.jenkins-ci.org/display/JENKINS/Plugin+tutorial and include password as described in https://wiki.jenkins-ci.org/display/JENKINS/Hosting+Plugins.
+Run `mvn release:prepare release:perform`
