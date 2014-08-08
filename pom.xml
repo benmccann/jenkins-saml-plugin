@@ -29,15 +29,16 @@ under the License.
   </parent>
 
   <artifactId>saml</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>0.2-SNAPSHOT</version>
   <packaging>hpi</packaging>
   <name>SAML Plugin</name>
   <url>http://wiki.jenkins-ci.org/display/JENKINS/SAML+Plugin</url>
 
   <scm>
-    <connection>scm:git:ssh://github.com/jenkinsci/saml-plugin.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com:jenkinsci/saml-plugin.git</developerConnection>
+    <connection>scm:git:git://github.com/jenkinsci/saml-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:jenkinsci/saml-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/saml-plugin</url>
+    <tag>HEAD</tag>
   </scm>
   
   <licenses>
