@@ -68,9 +68,15 @@ under the License.
     </pluginRepository>
   </pluginRepositories>
 
-  <properties>
-    <spring.version>2.5</spring.version>
-  </properties>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>2.5</version>
+      </plugin>
+    </plugins>
+  </build>
 
   <dependencyManagement>
     <dependencies>
