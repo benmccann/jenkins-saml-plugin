@@ -68,6 +68,7 @@ under the License.
     </pluginRepository>
   </pluginRepositories>
 
+  <!-- This section is only needed until org.jenkins-ci.plugins:plugin:1.574 is released -->
   <build>
     <plugins>
       <plugin>
