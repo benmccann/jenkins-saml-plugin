@@ -98,9 +98,16 @@ under the License.
 
   <dependencies>
     <dependency>
-      <groupId>org.opensaml</groupId>
-      <artifactId>opensaml</artifactId>
-      <version>2.6.1</version>
+        <groupId>org.pac4j</groupId>
+        <artifactId>pac4j-saml</artifactId>
+        <version>1.6.0-RC1</version>
+        <!-- Should be able to remove this exclusion after upgrading to 1.6.0-RC2 or newer -->
+        <exclusions>
+            <exclusion>
+                <groupId>org.slf4j</groupId>
+                <artifactId>log4j-over-slf4j</artifactId>
+            </exclusion>
+        </exclusions>
     </dependency>
     <dependency>
       <groupId>xml-apis</groupId>

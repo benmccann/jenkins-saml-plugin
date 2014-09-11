@@ -34,11 +34,19 @@ import org.acegisecurity.BadCredentialsException;
 import org.acegisecurity.context.SecurityContextHolder;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.Header;
-import org.kohsuke.stapler.HttpRedirect;
 import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+import org.pac4j.core.client.RedirectAction;
+import org.pac4j.core.client.RedirectAction.RedirectType;
+import org.pac4j.core.context.J2EContext;
+import org.pac4j.core.context.J2ERequestContext;
+import org.pac4j.core.context.WebContext;
+import org.pac4j.core.exception.RequiresHttpAction;
+import org.pac4j.saml.client.Saml2Client;
+import org.pac4j.saml.credentials.Saml2Credentials;
+import org.pac4j.saml.profile.Saml2Profile;
 
 import com.google.common.base.Preconditions;
 
@@ -50,22 +58,19 @@ import com.google.common.base.Preconditions;
 public class SamlSecurityRealm extends SecurityRealm {
 
   private static final Logger LOG = Logger.getLogger(SamlSecurityRealm.class.getName());
-  private static final String REFERER_ATTRIBUTE = SamlSecurityRealm.class.getName()+".referer";
+  private static final String REFERER_ATTRIBUTE = SamlSecurityRealm.class.getName() + ".referer";
   private static final String CONSUMER_SERVICE_URL_PATH = "securityRealm/finishLogin";
 
-  private String signOnUrl;
-
-  private String certificate;
+  private String idpMetadata;
 
   /**
    * Jenkins passes these parameters in when you update the settings.
    * It does this because of the @DataBoundConstructor
    */
   @DataBoundConstructor
-  public SamlSecurityRealm(String signOnUrl, String certificate) {
+  public SamlSecurityRealm(String signOnUrl, String idpMetadata) {
     super();
-    this.signOnUrl = Util.fixEmptyAndTrim(signOnUrl);
-    this.certificate = Util.fixEmptyAndTrim(certificate);
+    this.idpMetadata = Util.fixEmptyAndTrim(idpMetadata);
   }
 
   @Override
@@ -99,9 +104,21 @@ public class SamlSecurityRealm extends SecurityRealm {
   public HttpResponse doCommenceLogin(StaplerRequest request, @Header("Referer") final String referer) {
     LOG.fine("SamlSecurityRealm.doCommenceLogin called. Using consumerServiceUrl " + getConsumerServiceUrl());
     request.getSession().setAttribute(REFERER_ATTRIBUTE, referer);
-    String redirectUrl = new SamlRequestGenerator()
-        .createRequestUrl(signOnUrl, getConsumerServiceUrl(), Jenkins.getInstance().getRootUrl());
-    return new HttpRedirect(redirectUrl);
+
+    Saml2Client client = newClient();
+    WebContext context = new J2ERequestContext(request);
+    try {
+      RedirectAction action = client.getRedirectAction(context, true, false);
+      if (action.getType() == RedirectType.REDIRECT) {
+        return HttpResponses.redirectTo(action.getLocation());
+      } else if (action.getType() == RedirectType.SUCCESS) {
+        return HttpResponses.html(action.getContent());
+      } else {
+        throw new IllegalStateException("Received unexpected response type " + action.getType());
+      }
+    } catch (RequiresHttpAction e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   /**
@@ -109,43 +126,49 @@ public class SamlSecurityRealm extends SecurityRealm {
    */
   public HttpResponse doFinishLogin(StaplerRequest request, StaplerResponse response) {
     LOG.finer("SamlSecurityRealm.doFinishLogin called");
-    Preconditions.checkNotNull(certificate);
-    SamlResponseHandler responseHandler = new SamlResponseHandler(certificate);
-    SamlAuthenticationToken samlAuthToken = responseHandler.handle(request.getParameter("SAMLResponse"));
 
-    LOG.info("Received SAML response with status code " + samlAuthToken.getStatusCode()
-        + ", subject " + samlAuthToken.getSubject()
-        + ", issuer " + samlAuthToken.getIssuer()
-        + ", audience " + samlAuthToken.getAudience());
+    Saml2Client client = newClient();
+    WebContext context = new J2EContext(request, response);
+    Saml2Credentials credentials;
+    try {
+      credentials = client.getCredentials(context);
+    } catch (RequiresHttpAction e) {
+      throw new IllegalStateException(e);
+    }
+    Saml2Profile saml2Profile = client.getUserProfile(credentials, context);
 
-    Preconditions.checkState(samlAuthToken.getStatusCode().toLowerCase().contains("success"),
-        "Expected success but got " + samlAuthToken.getStatusCode());
-
+    SamlAuthenticationToken samlAuthToken = new SamlAuthenticationToken(saml2Profile.getId());
     SecurityContextHolder.getContext().setAuthentication(samlAuthToken);
-    SecurityListener.fireAuthenticated(new SamlUserDetails(samlAuthToken.getSubject()));
+    SecurityListener.fireAuthenticated(new SamlUserDetails(saml2Profile.getId()));
 
     String referer = (String) request.getSession().getAttribute(REFERER_ATTRIBUTE);
-    return HttpResponses.redirectTo(referer);
+    String redirectUrl = referer != null ? referer : baseUrl();
+    return HttpResponses.redirectTo(redirectUrl);
+  }
+
+  private Saml2Client newClient() {
+    Preconditions.checkNotNull(idpMetadata);
+
+    Saml2Client client = new Saml2Client();
+    client.setIdpMetadata(idpMetadata);
+    client.setCallbackUrl(getConsumerServiceUrl());
+    return client;
+  }
+
+  private String baseUrl() {
+    return Jenkins.getInstance().getRootUrl();
   }
 
   private String getConsumerServiceUrl() {
-    return Jenkins.getInstance().getRootUrl() + CONSUMER_SERVICE_URL_PATH;
-  }
-  
-  public String getSignOnUrl() {
-    return signOnUrl;
+    return baseUrl() + CONSUMER_SERVICE_URL_PATH;
   }
 
-  public void setSignOnUrl(String signOnUrl) {
-    this.signOnUrl = signOnUrl;
+  public String getIdpMetadata() {
+    return idpMetadata;
   }
 
-  public String getCertificate() {
-    return certificate;
-  }
-
-  public void setCertificate(String certificate) {
-    this.certificate = certificate;
+  public void setIdpMetadata(String idpMetadata) {
+    this.idpMetadata = idpMetadata;
   }
 
   @Extension

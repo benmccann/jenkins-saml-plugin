@@ -24,41 +24,19 @@ public class SamlAuthenticationToken extends AbstractAuthenticationToken {
 
   private static final long serialVersionUID = 1L;
 
-  private final String statusCode;
-  private final String issuer;
-  private final String audience;
-  private final String subject;
+  private final String principal;
 
-  public SamlAuthenticationToken(String statusCode, String issuer, String audience, String subject) {
+  public SamlAuthenticationToken(String subject) {
     super(new GrantedAuthority[] {});
-    this.statusCode = statusCode;
-    this.issuer = issuer;
-    this.audience = audience;
-    this.subject = subject;
+    this.principal = subject;
   }
 
-  public String getStatusCode() {
-    return statusCode;
+  public String getPrincipal() {
+    return principal;
   }
 
-  public String getIssuer() {
-    return issuer;
-  }
-
-  public String getAudience() {
-    return audience;
-  }
-
-  public String getSubject() {
-    return subject;
-  }
-
-  public Object getCredentials() {
+  public String getCredentials() {
     return "SAML does not use passwords";
-  }
-
-  public Object getPrincipal() {
-    return getSubject();
   }
 
 }
