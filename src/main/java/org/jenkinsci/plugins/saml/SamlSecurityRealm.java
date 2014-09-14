@@ -38,6 +38,7 @@ import org.kohsuke.stapler.HttpResponse;
 import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+import org.opensaml.common.xml.SAMLConstants;
 import org.pac4j.core.client.RedirectAction;
 import org.pac4j.core.client.RedirectAction.RedirectType;
 import org.pac4j.core.context.J2EContext;
@@ -152,6 +153,7 @@ public class SamlSecurityRealm extends SecurityRealm {
     Saml2Client client = new Saml2Client();
     client.setIdpMetadata(idpMetadata);
     client.setCallbackUrl(getConsumerServiceUrl());
+    client.setDestinationBindingType(SAMLConstants.SAML2_REDIRECT_BINDING_URI);
     return client;
   }
 
