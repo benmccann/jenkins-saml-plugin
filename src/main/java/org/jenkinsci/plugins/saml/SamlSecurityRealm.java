@@ -17,27 +17,17 @@ under the License. */
 
 package org.jenkinsci.plugins.saml;
 
+import com.google.common.base.Preconditions;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.Descriptor;
+import hudson.model.User;
 import hudson.security.SecurityRealm;
-
-import java.util.logging.Logger;
-
 import jenkins.model.Jenkins;
 import jenkins.security.SecurityListener;
-
-import org.acegisecurity.Authentication;
-import org.acegisecurity.AuthenticationException;
-import org.acegisecurity.AuthenticationManager;
-import org.acegisecurity.BadCredentialsException;
+import org.acegisecurity.*;
 import org.acegisecurity.context.SecurityContextHolder;
-import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.Header;
-import org.kohsuke.stapler.HttpResponse;
-import org.kohsuke.stapler.HttpResponses;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.*;
 import org.opensaml.common.xml.SAMLConstants;
 import org.pac4j.core.client.RedirectAction;
 import org.pac4j.core.client.RedirectAction.RedirectType;
@@ -49,7 +39,11 @@ import org.pac4j.saml.client.Saml2Client;
 import org.pac4j.saml.credentials.Saml2Credentials;
 import org.pac4j.saml.profile.Saml2Profile;
 
-import com.google.common.base.Preconditions;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Authenticates the user via SAML.
@@ -61,17 +55,36 @@ public class SamlSecurityRealm extends SecurityRealm {
   private static final Logger LOG = Logger.getLogger(SamlSecurityRealm.class.getName());
   private static final String REFERER_ATTRIBUTE = SamlSecurityRealm.class.getName() + ".referer";
   private static final String CONSUMER_SERVICE_URL_PATH = "securityRealm/finishLogin";
+  private static final String DEFAULT_DISPLAY_NAME_ATTRIBUTE_NAME = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
+  private static final String DEFAULT_GROUPS_ATTRIBUTE_NAME = "http://schemas.xmlsoap.org/claims/Group";
+  private static final int DEFAULT_MAXIMUM_AUTHENTICATION_LIFETIME = 24 * 60 * 60; // 24h
 
   private String idpMetadata;
+  private String displayNameAttributeName;
+  private String groupsAttributeName;
+  private int maximumAuthenticationLifetime;
 
   /**
    * Jenkins passes these parameters in when you update the settings.
    * It does this because of the @DataBoundConstructor
    */
   @DataBoundConstructor
-  public SamlSecurityRealm(String signOnUrl, String idpMetadata) {
+  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime) {
     super();
     this.idpMetadata = Util.fixEmptyAndTrim(idpMetadata);
+    this.displayNameAttributeName = DEFAULT_DISPLAY_NAME_ATTRIBUTE_NAME;
+    this.groupsAttributeName = DEFAULT_GROUPS_ATTRIBUTE_NAME;
+    this.maximumAuthenticationLifetime = DEFAULT_MAXIMUM_AUTHENTICATION_LIFETIME;
+
+    if (displayNameAttributeName != null && !displayNameAttributeName.isEmpty()) {
+      this.displayNameAttributeName = displayNameAttributeName;
+    }
+    if (groupsAttributeName != null && !groupsAttributeName.isEmpty()) {
+      this.groupsAttributeName = groupsAttributeName;
+    }
+    if (maximumAuthenticationLifetime != null && maximumAuthenticationLifetime > 0) {
+      this.maximumAuthenticationLifetime = maximumAuthenticationLifetime;
+    }
   }
 
   @Override
@@ -91,7 +104,7 @@ public class SamlSecurityRealm extends SecurityRealm {
         throw new BadCredentialsException("Unexpected authentication type: " + authentication);
       }
 
-    });
+    }, new SamlUserDetailsService());
   }
 
   @Override
@@ -136,12 +149,55 @@ public class SamlSecurityRealm extends SecurityRealm {
     } catch (RequiresHttpAction e) {
       throw new IllegalStateException(e);
     }
+
     Saml2Profile saml2Profile = client.getUserProfile(credentials, context);
 
-    SamlAuthenticationToken samlAuthToken = new SamlAuthenticationToken(saml2Profile.getId());
-    SecurityContextHolder.getContext().setAuthentication(samlAuthToken);
-    SecurityListener.fireAuthenticated(new SamlUserDetails(saml2Profile.getId()));
+    // retrieve user display name
+    String userFullName = null;
+    List<?> names = (List<?>) saml2Profile.getAttribute(this.displayNameAttributeName);
+    if (names != null && !names.isEmpty()) {
+      userFullName = (String)names.get(0);
+    }
 
+    // prepare list of groups
+    List<?> groups = (List<?>) saml2Profile.getAttribute(this.groupsAttributeName);
+    if (groups == null) {
+      groups = new ArrayList<String>();
+    }
+
+    // build list of authorities
+    List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+    authorities.add(AUTHENTICATED_AUTHORITY);
+    if (!groups.isEmpty()) {
+      for (Object group : groups) {
+        SamlGroupAuthority ga = new SamlGroupAuthority((String)group);
+        authorities.add(ga);
+      }
+    }
+
+    // create user data
+    SamlUserDetails userDetails = new SamlUserDetails(saml2Profile.getId(), authorities.toArray(new GrantedAuthority[authorities.size()]));
+    SamlAuthenticationToken samlAuthToken = new SamlAuthenticationToken(userDetails);
+
+    // initialize security context
+    SecurityContextHolder.getContext().setAuthentication(samlAuthToken);
+    SecurityListener.fireAuthenticated(userDetails);
+
+    // update user full name if necessary
+    if (userFullName != null && !userFullName.isEmpty()) {
+      User user = User.current();
+      if (userFullName.compareTo(user.getFullName()) != 0) {
+        user.setFullName(userFullName);
+        try {
+          user.save();
+        } catch (IOException e) {
+          // even if it fails, nothing critical
+          LOG.log(Level.WARNING, "Unable to save updated user data", e);
+        }
+      }
+    }
+
+    // redirect back to original page
     String referer = (String) request.getSession().getAttribute(REFERER_ATTRIBUTE);
     String redirectUrl = referer != null ? referer : baseUrl();
     return HttpResponses.redirectTo(redirectUrl);
@@ -154,6 +210,7 @@ public class SamlSecurityRealm extends SecurityRealm {
     client.setIdpMetadata(idpMetadata);
     client.setCallbackUrl(getConsumerServiceUrl());
     client.setDestinationBindingType(SAMLConstants.SAML2_REDIRECT_BINDING_URI);
+    client.setMaximumAuthenticationLifetime(this.maximumAuthenticationLifetime);
     return client;
   }
 
@@ -190,5 +247,4 @@ public class SamlSecurityRealm extends SecurityRealm {
     }
 
   }
-
 }

@@ -1,6 +1,6 @@
 /* Licensed to Jenkins CI under one or more contributor license
 agreements.  See the NOTICE file distributed with this work
-for additional information regarding copyright ownership. 
+for additional information regarding copyright ownership.
 Jenkins CI licenses this file to you under the Apache License,
 Version 2.0 (the "License"); you may not use this file except
 in compliance with the License.  You may obtain a copy of the
@@ -17,27 +17,25 @@ under the License. */
 
 package org.jenkinsci.plugins.saml;
 
-import org.acegisecurity.providers.AbstractAuthenticationToken;
+import org.acegisecurity.GrantedAuthority;
 
-public class SamlAuthenticationToken extends AbstractAuthenticationToken {
+/**
+ * Authority class, represents a group receved in SAML response
+ */
+public class SamlGroupAuthority implements GrantedAuthority {
 
-  private static final long serialVersionUID = 2L;
+  private final String group;
 
-  private final SamlUserDetails userDetails;
-
-  public SamlAuthenticationToken(SamlUserDetails userDetails) {
-    super(userDetails.getAuthorities());
-    this.userDetails = userDetails;
-    this.setDetails(userDetails);
-    this.setAuthenticated(true);
+  public SamlGroupAuthority(String group) {
+    this.group = group;
   }
 
-  public SamlUserDetails getPrincipal() {
-    return userDetails;
+  public String getAuthority() {
+    return this.group;
   }
 
-  public String getCredentials() {
-    return "SAML does not use passwords";
+  @Override
+  public String toString() {
+    return this.group;
   }
-
 }
