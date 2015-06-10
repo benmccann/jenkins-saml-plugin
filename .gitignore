@@ -12,3 +12,7 @@ work
 .classpath
 .project
 .settings
+
+# Intellij IDEA
+.idea
+*.iml
