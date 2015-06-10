@@ -156,7 +156,7 @@ public class SamlSecurityRealm extends SecurityRealm {
     String userFullName = null;
     List<?> names = (List<?>) saml2Profile.getAttribute(this.displayNameAttributeName);
     if (names != null && !names.isEmpty()) {
-      userFullName = (String)names.get(0);
+      userFullName = (String) names.get(0);
     }
 
     // prepare list of groups
@@ -228,6 +228,18 @@ public class SamlSecurityRealm extends SecurityRealm {
 
   public void setIdpMetadata(String idpMetadata) {
     this.idpMetadata = idpMetadata;
+  }
+
+  public String getDisplayNameAttributeName() {
+    return displayNameAttributeName;
+  }
+
+  public String getGroupsAttributeName() {
+    return groupsAttributeName;
+  }
+
+  public Integer getMaximumAuthenticationLifetime() {
+    return maximumAuthenticationLifetime;
   }
 
   @Extension

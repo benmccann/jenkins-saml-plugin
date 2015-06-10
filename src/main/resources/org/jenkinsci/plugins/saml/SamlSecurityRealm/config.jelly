@@ -4,16 +4,16 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <f:section title="SAML Identity Provider Settings" >
-    <f:entry title="IdP Metadata"  field="idpMetadata" help="/plugin/saml/help/metadata.html">
+    <f:entry title="IdP Metadata" field="idpMetadata" help="/plugin/saml/help/metadata.html">
       <f:textarea />
     </f:entry>
-    <f:entry title="Display Name Attribute"  field="displayNameAttributeName" help="/plugin/saml/help/displayNameAttributeName.html">
+    <f:entry title="Display Name Attribute" field="displayNameAttributeName" help="/plugin/saml/help/displayNameAttributeName.html">
       <f:textbox default="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name" />
     </f:entry>
-    <f:entry title="Group Attribute"  field="groupsAttributeName" help="/plugin/saml/help/groupsAttributeName.html">
+    <f:entry title="Group Attribute" field="groupsAttributeName" help="/plugin/saml/help/groupsAttributeName.html">
       <f:textbox default="http://schemas.xmlsoap.org/claims/Group" />
     </f:entry>
-    <f:entry title="Maximum Authentication Lifetime"  field="maximumAuthenticationLifetime" help="/plugin/saml/help/maximumAuthenticationLifetime.html">
+    <f:entry title="Maximum Authentication Lifetime" field="maximumAuthenticationLifetime" help="/plugin/saml/help/maximumAuthenticationLifetime.html">
       <f:textbox default="86400" />
     </f:entry>
   </f:section>
