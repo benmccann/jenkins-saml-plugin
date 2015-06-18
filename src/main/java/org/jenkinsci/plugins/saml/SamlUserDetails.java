@@ -22,16 +22,18 @@ import org.acegisecurity.userdetails.UserDetails;
 
 public class SamlUserDetails implements UserDetails {
 
-  private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 2L;
 
   private final String username;
+  private final GrantedAuthority[] authorities;
   
-  public SamlUserDetails(String username) {
+  public SamlUserDetails(String username, GrantedAuthority[] authorities) {
     this.username = username;
+    this.authorities = authorities;
   }
 
   public GrantedAuthority[] getAuthorities() {
-    return new GrantedAuthority [] {};
+    return authorities;
   }
 
   public String getPassword() {
