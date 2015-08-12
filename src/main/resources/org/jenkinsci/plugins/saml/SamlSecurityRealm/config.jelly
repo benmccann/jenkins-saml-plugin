@@ -16,5 +16,30 @@
     <f:entry title="Maximum Authentication Lifetime" field="maximumAuthenticationLifetime" help="/plugin/saml/help/maximumAuthenticationLifetime.html">
       <f:textbox default="86400" />
     </f:entry>
+    <f:entry title="Username Attribute"  field="usernameAttributeName" 
+             help="/plugin/saml/help/usernameAttributeName.html">
+      <f:textbox />
+    </f:entry>
+    
+    <f:optionalBlock field="useEncryption" title="Use Encryption ?" 
+                     help="/plugin/saml/help/encryption.html">
+      <f:entry title="Keystore path"  field="keystorePath" 
+             help="/plugin/saml/help/keystorePath.html">
+        <f:textbox />
+      </f:entry>
+      <f:entry title="Keystore password"  field="keystorePassword" 
+             help="/plugin/saml/help/keystorePassword.html">
+        <f:textbox />
+      </f:entry>
+      <f:entry title="Private Key password"  field="privateKeyPassword" 
+             help="/plugin/saml/help/keyPassword.html">
+        <f:textbox />
+      </f:entry>
+    </f:optionalBlock>
+    
+    <f:entry field="spMetadata" title="SP Metadata">
+      <l:copyButton message="Metadata copied to clipboard" text="${instance.spMetadata}"/>
+        Copy SP Metadata to clipboard to use to configure your IdP.
+    </f:entry>
   </f:section>
 </j:jelly>
