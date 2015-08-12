@@ -36,9 +36,16 @@
       </f:entry>
     </f:optionalBlock>
     
+    <!-- 
     <f:entry field="spMetadata" title="SP Metadata">
       <l:copyButton message="Metadata copied to clipboard" text="${instance.spMetadata}"/>
         Copy SP Metadata to clipboard to use to configure your IdP.
     </f:entry>
+     -->
+    <f:entry><block>
+      <a href="../securityRealm/metadata">Service Provider Metadata</a> 
+      which may be required to configure your
+      Identity Provider (based on last saved settings).
+    </block></f:entry>
   </f:section>
 </j:jelly>
