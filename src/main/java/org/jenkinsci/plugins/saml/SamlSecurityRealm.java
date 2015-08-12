@@ -78,11 +78,7 @@ public class SamlSecurityRealm extends SecurityRealm {
 
   private String usernameAttributeName;
 
-  private boolean useEncryption = false;
-
-  private String keystorePath;
-  private String keystorePassword;
-  private String privateKeyPassword;
+  private SamlEncryptionData encryptionData = null;
 
   /**
    * Jenkins passes these parameters in when you update the settings.
@@ -91,7 +87,7 @@ public class SamlSecurityRealm extends SecurityRealm {
   @DataBoundConstructor
   public SamlSecurityRealm(String signOnUrl, String idpMetadata,
       String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime,
-      String usernameAttributeName, SamlEncryptionData useEncryption) {
+      String usernameAttributeName, SamlEncryptionData encryptionData) {
     super();
     this.idpMetadata = Util.fixEmptyAndTrim(idpMetadata);
     this.displayNameAttributeName = DEFAULT_DISPLAY_NAME_ATTRIBUTE_NAME;
@@ -108,10 +104,7 @@ public class SamlSecurityRealm extends SecurityRealm {
       this.maximumAuthenticationLifetime = maximumAuthenticationLifetime;
     }
     this.usernameAttributeName = Util.fixEmptyAndTrim(usernameAttributeName);
-    this.useEncryption = useEncryption != null;
-    this.keystorePath = useEncryption == null ? null : useEncryption.getKeystorePath();
-    this.keystorePassword = useEncryption == null ? null : useEncryption.getKeystorePassword();
-    this.privateKeyPassword = useEncryption == null ? null : useEncryption.getPrivateKeyPassword();
+    this.encryptionData = encryptionData;
   }
 
   @Override
@@ -272,10 +265,10 @@ public class SamlSecurityRealm extends SecurityRealm {
     client.setIdpMetadata(idpMetadata);
     client.setCallbackUrl(getConsumerServiceUrl());
     client.setDestinationBindingType(SAMLConstants.SAML2_REDIRECT_BINDING_URI);
-    if (useEncryption) {
-      client.setKeystorePath(getKeystorePath());
-      client.setKeystorePassword(getKeystorePassword());
-      client.setPrivateKeyPassword(getPrivateKeyPassword());
+    if (encryptionData != null) {
+      client.setKeystorePath(encryptionData.getKeystorePath());
+      client.setKeystorePassword(encryptionData.getKeystorePassword());
+      client.setPrivateKeyPassword(encryptionData.getPrivateKeyPassword());
     }
 
     LOG.fine(client.printClientMetadata());
@@ -323,24 +316,20 @@ public class SamlSecurityRealm extends SecurityRealm {
     return maximumAuthenticationLifetime;
   }
 
-  public boolean isUseEncryption() {
-    return useEncryption;
-  }
-
-  public void setUseEncryption(boolean useEncryption) {
-    this.useEncryption = useEncryption;
+  public SamlEncryptionData getEncryptionData() {
+    return encryptionData;
   }
 
   public String getKeystorePath() {
-    return this.keystorePath;
+    return encryptionData.getKeystorePath();
   }
 
   public String getKeystorePassword() {
-    return this.keystorePassword;
+    return encryptionData.getKeystorePassword();
   }
 
   public String getPrivateKeyPassword() {
-    return this.privateKeyPassword;
+    return encryptionData.getPrivateKeyPassword();
   }
 
   @Extension

@@ -21,18 +21,17 @@
       <f:textbox />
     </f:entry>
     
-    <f:optionalBlock field="useEncryption" title="Use Encryption ?" 
+    <f:optionalBlock title="Use Encryption ?" 
+                     field="encryptionData"
+    checked="${instance.encryptionData != null}"
                      help="/plugin/saml/help/encryption.html">
-      <f:entry title="Keystore path"  field="keystorePath" 
-             help="/plugin/saml/help/keystorePath.html">
+      <f:entry title="Keystore path"  field="keystorePath" help="/plugin/saml/help/keystorePath.html">
         <f:textbox />
       </f:entry>
-      <f:entry title="Keystore password"  field="keystorePassword" 
-             help="/plugin/saml/help/keystorePassword.html">
+      <f:entry title="Keystore password"  field="keystorePassword" help="/plugin/saml/help/keystorePassword.html">
         <f:textbox />
       </f:entry>
-      <f:entry title="Private Key password"  field="privateKeyPassword" 
-             help="/plugin/saml/help/keyPassword.html">
+      <f:entry title="Private Key password"  field="privateKeyPassword" help="/plugin/saml/help/keyPassword.html">
         <f:textbox />
       </f:entry>
     </f:optionalBlock>
