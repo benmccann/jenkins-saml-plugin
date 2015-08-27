@@ -240,7 +240,7 @@ public class SamlSecurityRealm extends SecurityRealm {
         return (String) ((List<?>)attribute).get(0);
       }
       LOG.log(Level.SEVERE, "Unable to get username from Saml Profile {0}", saml2Profile);
-      throw new Error("Attribute "+usernameAttributeName+" contains no usable username");
+      throw new IllegalStateException("Attribute "+usernameAttributeName+" contains no usable username");
     } else {
       return saml2Profile.getId();
     }
