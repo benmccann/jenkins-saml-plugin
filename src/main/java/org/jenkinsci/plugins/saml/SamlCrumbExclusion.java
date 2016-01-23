@@ -22,9 +22,9 @@ public class SamlCrumbExclusion extends CrumbExclusion {
             throws IOException, ServletException {
         String pathInfo = request.getPathInfo();
         if(shouldExclude(pathInfo)) {
+            chain.doFilter(request, response);
             return true;
         }
-        chain.doFilter(request, response);
         return false;
     }
 
@@ -36,7 +36,7 @@ public class SamlCrumbExclusion extends CrumbExclusion {
             LOG.fine("SamlCrumbExclusion.shouldExclude excluding '" + pathInfo + "'");
             return true;
         } else {
-            LOG.fine("SamlCrumbExclusion.shouldExclude keeping '" + pathInfo + "'");
+            LOG.finer("SamlCrumbExclusion.shouldExclude keeping '" + pathInfo + "'");
             return false;
         }
     }
