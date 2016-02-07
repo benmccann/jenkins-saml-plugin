@@ -16,5 +16,12 @@
     <f:entry title="Maximum Authentication Lifetime" field="maximumAuthenticationLifetime" help="/plugin/saml/help/maximumAuthenticationLifetime.html">
       <f:textbox default="86400" />
     </f:entry>
+    <f:entry title="Username Case Conversion" field="usernameCaseConversion" help="/plugin/saml/help/usernameCaseConversion.html">
+      <select name="usernameCaseConversion">
+        <f:option value="none" selected="${instance.usernameCaseConversion == 'none'}">None</f:option>
+        <f:option value="lowercase" selected="${instance.usernameCaseConversion == 'lowercase'}">Lowercase</f:option>
+        <f:option value="uppercase" selected="${instance.usernameCaseConversion == 'uppercase'}">Uppercase</f:option>
+      </select>
+    </f:entry>
   </f:section>
 </j:jelly>

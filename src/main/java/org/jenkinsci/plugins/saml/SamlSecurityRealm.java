@@ -59,23 +59,26 @@ public class SamlSecurityRealm extends SecurityRealm {
   private static final String DEFAULT_DISPLAY_NAME_ATTRIBUTE_NAME = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
   private static final String DEFAULT_GROUPS_ATTRIBUTE_NAME = "http://schemas.xmlsoap.org/claims/Group";
   private static final int DEFAULT_MAXIMUM_AUTHENTICATION_LIFETIME = 24 * 60 * 60; // 24h
+  private static final String DEFAULT_USERNAME_CASE_CONVERSION = "none";
 
   private String idpMetadata;
   private String displayNameAttributeName;
   private String groupsAttributeName;
   private int maximumAuthenticationLifetime;
+  private String usernameCaseConversion;
 
   /**
    * Jenkins passes these parameters in when you update the settings.
    * It does this because of the @DataBoundConstructor
    */
   @DataBoundConstructor
-  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime) {
+  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime, String usernameCaseConversion) {
     super();
     this.idpMetadata = Util.fixEmptyAndTrim(idpMetadata);
     this.displayNameAttributeName = DEFAULT_DISPLAY_NAME_ATTRIBUTE_NAME;
     this.groupsAttributeName = DEFAULT_GROUPS_ATTRIBUTE_NAME;
     this.maximumAuthenticationLifetime = DEFAULT_MAXIMUM_AUTHENTICATION_LIFETIME;
+    this.usernameCaseConversion = DEFAULT_USERNAME_CASE_CONVERSION;
 
     if (displayNameAttributeName != null && !displayNameAttributeName.isEmpty()) {
       this.displayNameAttributeName = displayNameAttributeName;
@@ -86,6 +89,13 @@ public class SamlSecurityRealm extends SecurityRealm {
     if (maximumAuthenticationLifetime != null && maximumAuthenticationLifetime > 0) {
       this.maximumAuthenticationLifetime = maximumAuthenticationLifetime;
     }
+    if (usernameCaseConversion != null && !usernameCaseConversion.isEmpty()) {
+      this.usernameCaseConversion = Util.fixEmptyAndTrim(usernameCaseConversion);;
+    }
+  }
+
+  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime) {
+    this(signOnUrl, idpMetadata, displayNameAttributeName, groupsAttributeName, maximumAuthenticationLifetime, "none");
   }
 
   @Override
@@ -176,8 +186,17 @@ public class SamlSecurityRealm extends SecurityRealm {
       }
     }
 
+    // getId and possibly convert, based on settings
+    String username = saml2Profile.getId();
+    if (this.usernameCaseConversion != null) {
+      if (this.usernameCaseConversion.compareTo("lowercase") == 0) {
+        username = username.toLowerCase();
+      } else if (this.usernameCaseConversion.compareTo("uppercase") == 0) {
+        username = username.toUpperCase();
+      }
+    }
     // create user data
-    SamlUserDetails userDetails = new SamlUserDetails(saml2Profile.getId(), authorities.toArray(new GrantedAuthority[authorities.size()]));
+    SamlUserDetails userDetails = new SamlUserDetails(username, authorities.toArray(new GrantedAuthority[authorities.size()]));
     SamlAuthenticationToken samlAuthToken = new SamlAuthenticationToken(userDetails);
 
     // initialize security context
@@ -241,6 +260,14 @@ public class SamlSecurityRealm extends SecurityRealm {
 
   public Integer getMaximumAuthenticationLifetime() {
     return maximumAuthenticationLifetime;
+  }
+
+  public String getUsernameCaseConversion() {
+    return usernameCaseConversion;
+  }
+
+  public void setUsernameCaseConversion(String usernameCaseConversion) {
+    this.usernameCaseConversion = usernameCaseConversion;
   }
 
   @Extension
