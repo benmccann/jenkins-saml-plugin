@@ -17,20 +17,11 @@ under the License. */
 
 package org.jenkinsci.plugins.saml;
 
-import hudson.Extension;
-import hudson.Util;
-import hudson.model.Descriptor;
-import hudson.model.User;
-import hudson.security.SecurityRealm;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import jenkins.model.Jenkins;
-import jenkins.security.SecurityListener;
 
 import org.acegisecurity.Authentication;
 import org.acegisecurity.AuthenticationException;
@@ -57,24 +48,35 @@ import org.pac4j.saml.profile.Saml2Profile;
 
 import com.google.common.base.Preconditions;
 
+import hudson.Extension;
+import hudson.Util;
+import hudson.model.Descriptor;
+import hudson.model.User;
+import hudson.security.SecurityRealm;
+import jenkins.model.Jenkins;
+import jenkins.security.SecurityListener;
+
 /**
  * Authenticates the user via SAML.
  * This class is the main entry point to the plugin.
  * Uses Stapler (stapler.kohsuke.org) to bind methods to URLs.
  */
 public class SamlSecurityRealm extends SecurityRealm {
+  public static final String CONSUMER_SERVICE_URL_PATH = "securityRealm/finishLogin";
+
 
   private static final Logger LOG = Logger.getLogger(SamlSecurityRealm.class.getName());
   private static final String REFERER_ATTRIBUTE = SamlSecurityRealm.class.getName() + ".referer";
-  private static final String CONSUMER_SERVICE_URL_PATH = "securityRealm/finishLogin";
   private static final String DEFAULT_DISPLAY_NAME_ATTRIBUTE_NAME = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
   private static final String DEFAULT_GROUPS_ATTRIBUTE_NAME = "http://schemas.xmlsoap.org/claims/Group";
   private static final int DEFAULT_MAXIMUM_AUTHENTICATION_LIFETIME = 24 * 60 * 60; // 24h
+  private static final String DEFAULT_USERNAME_CASE_CONVERSION = "none";
 
   private String idpMetadata;
   private String displayNameAttributeName;
   private String groupsAttributeName;
   private int maximumAuthenticationLifetime;
+  private String usernameCaseConversion;
 
   private String usernameAttributeName;
 
@@ -85,14 +87,13 @@ public class SamlSecurityRealm extends SecurityRealm {
    * It does this because of the @DataBoundConstructor
    */
   @DataBoundConstructor
-  public SamlSecurityRealm(String signOnUrl, String idpMetadata,
-      String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime,
-      String usernameAttributeName, SamlEncryptionData encryptionData) {
+  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime, String usernameAttributeName, SamlEncryptionData encryptionData, String usernameCaseConversion) {
     super();
     this.idpMetadata = Util.fixEmptyAndTrim(idpMetadata);
     this.displayNameAttributeName = DEFAULT_DISPLAY_NAME_ATTRIBUTE_NAME;
     this.groupsAttributeName = DEFAULT_GROUPS_ATTRIBUTE_NAME;
     this.maximumAuthenticationLifetime = DEFAULT_MAXIMUM_AUTHENTICATION_LIFETIME;
+    this.usernameCaseConversion = DEFAULT_USERNAME_CASE_CONVERSION;
 
     if (displayNameAttributeName != null && !displayNameAttributeName.isEmpty()) {
       this.displayNameAttributeName = displayNameAttributeName;
@@ -105,6 +106,13 @@ public class SamlSecurityRealm extends SecurityRealm {
     }
     this.usernameAttributeName = Util.fixEmptyAndTrim(usernameAttributeName);
     this.encryptionData = encryptionData;
+    if (usernameCaseConversion != null && !usernameCaseConversion.isEmpty()) {
+      this.usernameCaseConversion = Util.fixEmptyAndTrim(usernameCaseConversion);
+    }
+  }
+
+  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime, String usernameAttributeName, SamlEncryptionData encryptionData) {
+    this(signOnUrl, idpMetadata, displayNameAttributeName, groupsAttributeName, maximumAuthenticationLifetime, usernameAttributeName, encryptionData, "none");
   }
 
   @Override
@@ -196,8 +204,16 @@ public class SamlSecurityRealm extends SecurityRealm {
       }
     }
 
-    // create user data
+    // getId and possibly convert, based on settings
     String username = getUsernameFromProfile(saml2Profile);
+    if (this.usernameCaseConversion != null) {
+      if (this.usernameCaseConversion.compareTo("lowercase") == 0) {
+        username = username.toLowerCase();
+      } else if (this.usernameCaseConversion.compareTo("uppercase") == 0) {
+        username = username.toUpperCase();
+      }
+    }
+    // create user data
     SamlUserDetails userDetails = new SamlUserDetails(username, authorities.toArray(new GrantedAuthority[authorities.size()]));
     SamlAuthenticationToken samlAuthToken = new SamlAuthenticationToken(userDetails);
 
@@ -330,6 +346,14 @@ public class SamlSecurityRealm extends SecurityRealm {
 
   public String getPrivateKeyPassword() {
     return encryptionData.getPrivateKeyPassword();
+  }
+
+  public String getUsernameCaseConversion() {
+    return usernameCaseConversion;
+  }
+
+  public void setUsernameCaseConversion(String usernameCaseConversion) {
+    this.usernameCaseConversion = usernameCaseConversion;
   }
 
   @Extension

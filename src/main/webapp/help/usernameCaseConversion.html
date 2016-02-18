@@ -1,0 +1,12 @@
+<div>
+    The ID returned from SAML is used as the username for Authorization, which
+    is usually case sensitive. To make it easier to match with user definition
+    in the policy, the returned value can be converted.
+    <ul>
+        <li><b>None</b> - will not change return value</li>
+        <li><b>Lowercase</b> - convert to lowercase</li>
+        <li><b>Uppercase</b> - convert to uppercase</li>
+    </ul>
+    <b><u>Caution!</u></b> Be aware of case in Authorization strategy as you
+     may lose access rights if they do no match.
+</div>
