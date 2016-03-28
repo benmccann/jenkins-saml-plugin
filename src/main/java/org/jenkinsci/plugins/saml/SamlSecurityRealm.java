@@ -337,15 +337,15 @@ public class SamlSecurityRealm extends SecurityRealm {
   }
 
   public String getKeystorePath() {
-    return encryptionData.getKeystorePath();
+    return encryptionData != null ? encryptionData.getKeystorePath() : null;
   }
 
   public String getKeystorePassword() {
-    return encryptionData.getKeystorePassword();
+    return encryptionData != null ? encryptionData.getKeystorePassword() : null;
   }
 
   public String getPrivateKeyPassword() {
-    return encryptionData.getPrivateKeyPassword();
+    return encryptionData != null ? encryptionData.getPrivateKeyPassword() : null;
   }
 
   public String getUsernameCaseConversion() {
