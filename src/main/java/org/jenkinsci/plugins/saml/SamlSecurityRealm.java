@@ -255,11 +255,10 @@ public class SamlSecurityRealm extends SecurityRealm {
       if (attribute instanceof List) {
         return (String) ((List<?>)attribute).get(0);
       }
-      LOG.log(Level.SEVERE, "Unable to get username from Saml Profile {0}", saml2Profile);
-      throw new IllegalStateException("Attribute "+usernameAttributeName+" contains no usable username");
-    } else {
-      return saml2Profile.getId();
+      LOG.log(Level.SEVERE, "Unable to get username from attribute {0} value {1}, Saml Profile {2}", new Object[] { usernameAttributeName, attribute, saml2Profile });
+      LOG.log(Level.SEVERE, "Falling back to NameId {0}", saml2Profile.getId());
     }
+    return saml2Profile.getId();
   }
 
   /**
