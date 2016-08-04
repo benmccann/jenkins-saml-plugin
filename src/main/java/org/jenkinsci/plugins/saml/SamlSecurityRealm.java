@@ -285,9 +285,10 @@ public class SamlSecurityRealm extends SecurityRealm {
       client.setKeystorePassword(encryptionData.getKeystorePassword());
       client.setPrivateKeyPassword(encryptionData.getPrivateKeyPassword());
     }
-
-    LOG.fine(client.printClientMetadata());
     client.setMaximumAuthenticationLifetime(this.maximumAuthenticationLifetime);
+    if (LOG.isLoggable(Level.FINE)) {
+      LOG.fine(client.printClientMetadata());
+    }
     return client;
   }
 
