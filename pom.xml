@@ -25,7 +25,7 @@ under the License.
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>1.565.1</version>
+    <version>1.599</version>
   </parent>
 
   <artifactId>saml</artifactId>
@@ -38,7 +38,6 @@ under the License.
     <connection>scm:git:git://github.com/jenkinsci/saml-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/saml-plugin.git</developerConnection>
     <url>https://github.com/jenkinsci/saml-plugin</url>
-    <tag>saml-0.6</tag>
   </scm>
   
   <licenses>
@@ -68,17 +67,6 @@ under the License.
     </pluginRepository>
   </pluginRepositories>
 
-  <!-- This section is only needed until org.jenkins-ci.plugins:plugin:1.574 is released -->
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-release-plugin</artifactId>
-        <version>2.5.2</version>
-      </plugin>
-    </plugins>
-  </build>
-
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -100,14 +88,7 @@ under the License.
     <dependency>
         <groupId>org.pac4j</groupId>
         <artifactId>pac4j-saml</artifactId>
-        <version>1.6.0-RC1</version>
-        <!-- Should be able to remove this exclusion after upgrading to 1.6.0-RC2 or newer -->
-        <exclusions>
-            <exclusion>
-                <groupId>org.slf4j</groupId>
-                <artifactId>log4j-over-slf4j</artifactId>
-            </exclusion>
-        </exclusions>
+        <version>1.6.0</version>
     </dependency>
     <dependency>
       <groupId>xml-apis</groupId>
