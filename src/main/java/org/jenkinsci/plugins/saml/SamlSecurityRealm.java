@@ -221,7 +221,7 @@ public class SamlSecurityRealm extends SecurityRealm {
     // update user full name if necessary
     if (userFullName != null && !userFullName.isEmpty()) {
       User user = User.current();
-      if (userFullName.compareTo(user.getFullName()) != 0) {
+      if (user != null && userFullName.compareTo(user.getFullName()) != 0) {
         user.setFullName(userFullName);
         try {
           user.save();
@@ -290,7 +290,7 @@ public class SamlSecurityRealm extends SecurityRealm {
   }
 
   private String baseUrl() {
-    return Jenkins.getInstance().getRootUrl();
+    return Jenkins.getActiveInstance().getRootUrl();
   }
 
   private String getConsumerServiceUrl() {
