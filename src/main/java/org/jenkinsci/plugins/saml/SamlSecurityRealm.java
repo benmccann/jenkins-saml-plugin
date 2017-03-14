@@ -39,6 +39,7 @@ import org.pac4j.saml.client.Saml2Client;
 import org.pac4j.saml.credentials.Saml2Credentials;
 import org.pac4j.saml.profile.Saml2Profile;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -287,6 +288,29 @@ public class SamlSecurityRealm extends SecurityRealm {
       LOG.fine(client.printClientMetadata());
     }
     return client;
+  }
+
+  /**
+   * @see SecurityRealm#getPostLogOutUrl
+   * Note: It does not call the logout service on SAML because the library does not implement it on this version,
+   * it will be done when we upgrade the library.
+   */
+  @Override
+  protected String getPostLogOutUrl(StaplerRequest req,@Nonnull Authentication auth) {
+    LOG.log(Level.FINE,"Doing Logout {}",auth.getPrincipal());
+    // if we just redirect to the root and anonymous does not have Overall read then we will start a login all over again.
+    // we are actually anonymous here as the security context has been cleared
+    if (Jenkins.getActiveInstance().hasPermission(Jenkins.READ)) {
+        return super.getPostLogOutUrl(req, auth);
+    }
+    return req.getContextPath()+ "/" + SamlLogoutAction.POST_LOGOUT_URL;
+  }
+
+  @Override
+  public void doLogout(StaplerRequest req, StaplerResponse rsp) throws IOException, javax.servlet.ServletException {
+    super.doLogout(req,rsp);
+      LOG.log(Level.FINEST,"Here we could do the SAML Single Logout");
+      //TODO JENKINS-42448
   }
 
   private String baseUrl() {
