@@ -27,6 +27,7 @@ import jenkins.model.Jenkins;
 import jenkins.security.SecurityListener;
 import org.acegisecurity.*;
 import org.acegisecurity.context.SecurityContextHolder;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.*;
 import org.opensaml.common.xml.SAMLConstants;
 import org.pac4j.core.client.RedirectAction;
@@ -59,36 +60,36 @@ public class SamlSecurityRealm extends SecurityRealm {
    */
   public static final String CONSUMER_SERVICE_URL_PATH = "securityRealm/finishLogin";
 
-
   private static final Logger LOG = Logger.getLogger(SamlSecurityRealm.class.getName());
   private static final String REFERER_ATTRIBUTE = SamlSecurityRealm.class.getName() + ".referer";
+  protected static final String EXPIRATION_ATTRIBUTE = SamlSecurityRealm.class.getName() + ".expiration";
   private static final String DEFAULT_DISPLAY_NAME_ATTRIBUTE_NAME = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
   private static final String DEFAULT_GROUPS_ATTRIBUTE_NAME = "http://schemas.xmlsoap.org/claims/Group";
   private static final int DEFAULT_MAXIMUM_AUTHENTICATION_LIFETIME = 24 * 60 * 60; // 24h
   private static final String DEFAULT_USERNAME_CASE_CONVERSION = "none";
 
-  private String idpMetadata;
   private String displayNameAttributeName;
   private String groupsAttributeName;
   private int maximumAuthenticationLifetime;
-  private String usernameCaseConversion;
 
-  private String usernameAttributeName;
+  private final String idpMetadata;
+  private final String usernameCaseConversion;
+  private final String usernameAttributeName;
 
-  private SamlEncryptionData encryptionData = null;
+  private SamlEncryptionData encryptionData;
+  private SamlAdvancedConfiguration advancedConfiguration;
 
   /**
    * Jenkins passes these parameters in when you update the settings.
    * It does this because of the @DataBoundConstructor
    */
   @DataBoundConstructor
-  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime, String usernameAttributeName, SamlEncryptionData encryptionData, String usernameCaseConversion) {
+  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime, String usernameAttributeName, SamlAdvancedConfiguration advancedConfiguration, SamlEncryptionData encryptionData, String usernameCaseConversion) {
     super();
     this.idpMetadata = Util.fixEmptyAndTrim(idpMetadata);
     this.displayNameAttributeName = DEFAULT_DISPLAY_NAME_ATTRIBUTE_NAME;
     this.groupsAttributeName = DEFAULT_GROUPS_ATTRIBUTE_NAME;
     this.maximumAuthenticationLifetime = DEFAULT_MAXIMUM_AUTHENTICATION_LIFETIME;
-    this.usernameCaseConversion = DEFAULT_USERNAME_CASE_CONVERSION;
 
     if (displayNameAttributeName != null && !displayNameAttributeName.isEmpty()) {
       this.displayNameAttributeName = displayNameAttributeName;
@@ -100,15 +101,14 @@ public class SamlSecurityRealm extends SecurityRealm {
       this.maximumAuthenticationLifetime = maximumAuthenticationLifetime;
     }
     this.usernameAttributeName = Util.fixEmptyAndTrim(usernameAttributeName);
+    this.advancedConfiguration = advancedConfiguration;
     this.encryptionData = encryptionData;
-    if (usernameCaseConversion != null && !usernameCaseConversion.isEmpty()) {
-      this.usernameCaseConversion = Util.fixEmptyAndTrim(usernameCaseConversion);
-    }
+    this.usernameCaseConversion = StringUtils.defaultIfBlank(usernameCaseConversion,DEFAULT_USERNAME_CASE_CONVERSION);
     LOG.finer(this.toString());
   }
 
-  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime, String usernameAttributeName, SamlEncryptionData encryptionData) {
-    this(signOnUrl, idpMetadata, displayNameAttributeName, groupsAttributeName, maximumAuthenticationLifetime, usernameAttributeName, encryptionData, "none");
+  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime, String usernameAttributeName, SamlAdvancedConfiguration advancedConfiguration, SamlEncryptionData encryptionData) {
+    this(signOnUrl, idpMetadata, displayNameAttributeName, groupsAttributeName, maximumAuthenticationLifetime, usernameAttributeName, advancedConfiguration, encryptionData, "none");
   }
 
   @Override
@@ -213,7 +213,16 @@ public class SamlSecurityRealm extends SecurityRealm {
     }
     // create user data
     SamlUserDetails userDetails = new SamlUserDetails(username, authorities.toArray(new GrantedAuthority[authorities.size()]));
-    SamlAuthenticationToken samlAuthToken = new SamlAuthenticationToken(userDetails);
+    // set session expiration, if needed.
+
+    if (getMaximumSessionLifetime() != null) {
+      request.getSession().setAttribute(
+        EXPIRATION_ATTRIBUTE,
+        System.currentTimeMillis() + 1000 * getMaximumSessionLifetime()
+      );
+    }
+
+    SamlAuthenticationToken samlAuthToken = new SamlAuthenticationToken(userDetails, request.getSession());
 
     // initialize security context
     SecurityContextHolder.getContext().setAuthentication(samlAuthToken);
@@ -232,6 +241,7 @@ public class SamlSecurityRealm extends SecurityRealm {
         }
       }
     }
+
 
     // redirect back to original page
     String referer = (String) request.getSession().getAttribute(REFERER_ATTRIBUTE);
@@ -278,12 +288,32 @@ public class SamlSecurityRealm extends SecurityRealm {
     client.setIdpMetadata(idpMetadata);
     client.setCallbackUrl(getConsumerServiceUrl());
     client.setDestinationBindingType(SAMLConstants.SAML2_REDIRECT_BINDING_URI);
-    if (encryptionData != null) {
-      client.setKeystorePath(encryptionData.getKeystorePath());
-      client.setKeystorePassword(encryptionData.getKeystorePassword());
-      client.setPrivateKeyPassword(encryptionData.getPrivateKeyPassword());
+    if (getEncryptionData() != null) {
+      client.setKeystorePath(getKeystorePath());
+      client.setKeystorePassword(getKeystorePassword());
+      client.setPrivateKeyPassword(getPrivateKeyPassword());
     }
+
     client.setMaximumAuthenticationLifetime(this.maximumAuthenticationLifetime);
+
+    if(getAdvancedConfiguration()!=null) {
+
+      // request forced authentication at the IdP, if selected
+      client.setForceAuth(getForceAuthn());
+
+      // override the default EntityId for this SP, if one is set
+      if (getSpEntityId() != null) {
+        client.setSpEntityId(getSpEntityId());
+      }
+
+      // if a specific authentication type (authentication context class
+      // reference) is set, include it in the request to the IdP, and request
+      // that the IdP uses exact matching for authentication types
+      if (getAuthnContextClassRef() != null) {
+        client.setAuthnContextClassRef(getAuthnContextClassRef());
+        client.setComparisonType("exact");
+      }
+    }
     if (LOG.isLoggable(Level.FINE)) {
       LOG.fine(client.printClientMetadata());
     }
@@ -325,17 +355,10 @@ public class SamlSecurityRealm extends SecurityRealm {
     return idpMetadata;
   }
 
-  public void setIdpMetadata(String idpMetadata) {
-    this.idpMetadata = idpMetadata;
-  }
-
   public String getUsernameAttributeName() {
     return usernameAttributeName;
   }
 
-  public void setUsernameAttributeName(String attribute) {
-    this.usernameAttributeName = attribute;
-  }
 
   public String getSpMetadata() {
     return newClient().printClientMetadata();
@@ -351,6 +374,26 @@ public class SamlSecurityRealm extends SecurityRealm {
 
   public Integer getMaximumAuthenticationLifetime() {
     return maximumAuthenticationLifetime;
+  }
+
+  public SamlAdvancedConfiguration getAdvancedConfiguration() {
+    return advancedConfiguration;
+  }
+
+  public Boolean getForceAuthn() {
+    return advancedConfiguration != null ? advancedConfiguration.getForceAuthn() : Boolean.FALSE;
+  }
+
+  public String getAuthnContextClassRef() {
+    return advancedConfiguration != null ? advancedConfiguration.getAuthnContextClassRef() : null;
+  }
+
+  public String getSpEntityId() {
+    return advancedConfiguration != null ? advancedConfiguration.getSpEntityId() : null;
+  }
+
+  public Integer getMaximumSessionLifetime() {
+    return advancedConfiguration != null ? advancedConfiguration.getMaximumSessionLifetime() : null;
   }
 
   public SamlEncryptionData getEncryptionData() {
@@ -371,10 +414,6 @@ public class SamlSecurityRealm extends SecurityRealm {
 
   public String getUsernameCaseConversion() {
     return usernameCaseConversion;
-  }
-
-  public void setUsernameCaseConversion(String usernameCaseConversion) {
-    this.usernameCaseConversion = usernameCaseConversion;
   }
 
   @Extension
@@ -405,6 +444,7 @@ public class SamlSecurityRealm extends SecurityRealm {
     sb.append(", usernameCaseConversion='").append(usernameCaseConversion).append('\'');
     sb.append(", usernameAttributeName='").append(usernameAttributeName).append('\'');
     sb.append(", encryptionData=").append(encryptionData);
+    sb.append(", advancedConfiguration=").append(advancedConfiguration);
     sb.append('}');
     return sb.toString();
   }
