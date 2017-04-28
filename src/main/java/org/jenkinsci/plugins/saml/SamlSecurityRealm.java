@@ -24,6 +24,7 @@ import hudson.util.FormValidation;
 import hudson.model.Descriptor;
 import hudson.model.User;
 import hudson.security.SecurityRealm;
+import hudson.tasks.Mailer.UserProperty;
 import jenkins.model.Jenkins;
 import jenkins.security.SecurityListener;
 import org.acegisecurity.*;
@@ -62,18 +63,20 @@ public class SamlSecurityRealm extends SecurityRealm {
    * URL to process the SAML answers
    */
   public static final String CONSUMER_SERVICE_URL_PATH = "securityRealm/finishLogin";
+  public static final String EXPIRATION_ATTRIBUTE = SamlSecurityRealm.class.getName() + ".expiration";
 
   private static final Logger LOG = Logger.getLogger(SamlSecurityRealm.class.getName());
   private static final String REFERER_ATTRIBUTE = SamlSecurityRealm.class.getName() + ".referer";
-  protected static final String EXPIRATION_ATTRIBUTE = SamlSecurityRealm.class.getName() + ".expiration";
   private static final String DEFAULT_DISPLAY_NAME_ATTRIBUTE_NAME = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
   private static final String DEFAULT_GROUPS_ATTRIBUTE_NAME = "http://schemas.xmlsoap.org/claims/Group";
   private static final int DEFAULT_MAXIMUM_AUTHENTICATION_LIFETIME = 24 * 60 * 60; // 24h
   private static final String DEFAULT_USERNAME_CASE_CONVERSION = "none";
+  private static final String DEFAULT_EMAIL_ATTRIBUTE_NAME = "email";
 
   private String displayNameAttributeName;
   private String groupsAttributeName;
   private int maximumAuthenticationLifetime;
+  private String emailAttributeName;
 
   private final String idpMetadata;
   private final String usernameCaseConversion;
@@ -86,9 +89,20 @@ public class SamlSecurityRealm extends SecurityRealm {
   /**
    * Jenkins passes these parameters in when you update the settings.
    * It does this because of the @DataBoundConstructor
+   *
+   * @param idpMetadata Identity provider Metadata
+   * @param displayNameAttributeName attribute that has the displayname
+   * @param groupsAttributeName attribute that has the groups
+   * @param maximumAuthenticationLifetime maximum time that an identification it is valid
+   * @param usernameAttributeName attribute that has the username
+   * @param emailAttributeName attribute that has the email
+   * @param logoutUrl optional URL to redirect on logout
+   * @param advancedConfiguration advanced configuration settings
+   * @param encryptionData encryption configuration settings
+   * @param usernameCaseConversion username case sensitive settings
    */
   @DataBoundConstructor
-  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime, String usernameAttributeName, String logoutUrl, SamlAdvancedConfiguration advancedConfiguration, SamlEncryptionData encryptionData, String usernameCaseConversion) {
+  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime, String usernameAttributeName, String emailAttributeName, String logoutUrl, SamlAdvancedConfiguration advancedConfiguration, SamlEncryptionData encryptionData, String usernameCaseConversion) {
     super();
     this.idpMetadata = Util.fixEmptyAndTrim(idpMetadata);
     this.displayNameAttributeName = DEFAULT_DISPLAY_NAME_ATTRIBUTE_NAME;
@@ -108,12 +122,17 @@ public class SamlSecurityRealm extends SecurityRealm {
     this.advancedConfiguration = advancedConfiguration;
     this.encryptionData = encryptionData;
     this.usernameCaseConversion = StringUtils.defaultIfBlank(usernameCaseConversion,DEFAULT_USERNAME_CASE_CONVERSION);
+
+    if (StringUtils.isNotBlank(emailAttributeName)) {
+      this.emailAttributeName = Util.fixEmptyAndTrim(emailAttributeName);
+    }
+
     this.logoutUrl = Util.fixEmptyAndTrim(logoutUrl);
     LOG.finer(this.toString());
   }
 
-  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime, String usernameAttributeName, String logoutUrl, SamlAdvancedConfiguration advancedConfiguration, SamlEncryptionData encryptionData) {
-    this(signOnUrl, idpMetadata, displayNameAttributeName, groupsAttributeName, maximumAuthenticationLifetime, usernameAttributeName, logoutUrl, advancedConfiguration, encryptionData, "none");
+  public SamlSecurityRealm(String signOnUrl, String idpMetadata, String displayNameAttributeName, String groupsAttributeName, Integer maximumAuthenticationLifetime, String usernameAttributeName, String emailAttributeName, String logoutUrl, SamlAdvancedConfiguration advancedConfiguration, SamlEncryptionData encryptionData) {
+    this(signOnUrl, idpMetadata, displayNameAttributeName, groupsAttributeName, maximumAuthenticationLifetime, usernameAttributeName, emailAttributeName, logoutUrl, advancedConfiguration, encryptionData, "none");
   }
 
   @Override
@@ -171,6 +190,7 @@ public class SamlSecurityRealm extends SecurityRealm {
    */
   public HttpResponse doFinishLogin(StaplerRequest request, StaplerResponse response) {
     LOG.finer("SamlSecurityRealm.doFinishLogin called");
+    boolean saveUser = false;
 
     Saml2Client client = newClient();
     WebContext context = new J2EContext(request, response);
@@ -184,38 +204,12 @@ public class SamlSecurityRealm extends SecurityRealm {
     Saml2Profile saml2Profile = client.getUserProfile(credentials, context);
 
     LOG.finer(saml2Profile.toString());
-    // retrieve user display name
-    String userFullName = null;
-    List<?> names = (List<?>) saml2Profile.getAttribute(this.displayNameAttributeName);
-    if (names != null && !names.isEmpty()) {
-      userFullName = (String) names.get(0);
-    }
-
-    // prepare list of groups
-    List<?> groups = (List<?>) saml2Profile.getAttribute(this.groupsAttributeName);
-    if (groups == null) {
-      groups = new ArrayList<String>();
-    }
-
-    // build list of authorities
-    List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
-    authorities.add(AUTHENTICATED_AUTHORITY);
-    if (!groups.isEmpty()) {
-      for (Object group : groups) {
-        SamlGroupAuthority ga = new SamlGroupAuthority((String)group);
-        authorities.add(ga);
-      }
-    }
 
     // getId and possibly convert, based on settings
-    String username = getUsernameFromProfile(saml2Profile);
-    if (this.usernameCaseConversion != null) {
-      if (this.usernameCaseConversion.compareTo("lowercase") == 0) {
-        username = username.toLowerCase();
-      } else if (this.usernameCaseConversion.compareTo("uppercase") == 0) {
-        username = username.toUpperCase();
-      }
-    }
+    String username = loadUserName(saml2Profile);
+
+    List<GrantedAuthority> authorities = loadGrantedAuthorities(saml2Profile);
+
     // create user data
     SamlUserDetails userDetails = new SamlUserDetails(username, authorities.toArray(new GrantedAuthority[authorities.size()]));
     // set session expiration, if needed.
@@ -232,21 +226,22 @@ public class SamlSecurityRealm extends SecurityRealm {
     // initialize security context
     SecurityContextHolder.getContext().setAuthentication(samlAuthToken);
     SecurityListener.fireAuthenticated(userDetails);
+    User user = User.current();
 
-    // update user full name if necessary
-    if (userFullName != null && !userFullName.isEmpty()) {
-      User user = User.current();
-      if (user != null && userFullName.compareTo(user.getFullName()) != 0) {
-        user.setFullName(userFullName);
-        try {
-          user.save();
-        } catch (IOException e) {
-          // even if it fails, nothing critical
-          LOG.log(Level.WARNING, "Unable to save updated user data", e);
-        }
+    saveUser |= modifyUserFullName(user, saml2Profile);
+
+
+    //retrieve user email
+    saveUser |= modifyUserEmail(user,(List<?>) saml2Profile.getAttribute(getEmailAttributeName()));
+
+    try {
+      if(user != null && saveUser) {
+        user.save();
       }
+    } catch (IOException e) {
+      // even if it fails, nothing critical
+      LOG.log(Level.WARNING, "Unable to save updated user data", e);
     }
-
 
     // redirect back to original page
     String referer = (String) request.getSession().getAttribute(REFERER_ATTRIBUTE);
@@ -255,9 +250,105 @@ public class SamlSecurityRealm extends SecurityRealm {
   }
 
   /**
+   * load the username from the profile and set the correct characters case.
+   * @param saml2Profile SAML Profile.
+   * @return the user name.
+   */
+  private String loadUserName(Saml2Profile saml2Profile) {
+    String username = getUsernameFromProfile(saml2Profile);
+    if (this.usernameCaseConversion != null) {
+      if (this.usernameCaseConversion.compareTo("lowercase") == 0) {
+        username = username.toLowerCase();
+      } else if (this.usernameCaseConversion.compareTo("uppercase") == 0) {
+        username = username.toUpperCase();
+      }
+    }
+    return username;
+  }
+
+  /**
+   * modify the fullname in the current user taken it from the SAML Profile.
+   * @param user current user.
+   * @param saml2Profile SAML Profile.
+   * @return true if the current user is modified.
+   */
+  private boolean modifyUserFullName(User user, Saml2Profile saml2Profile) {
+    boolean saveUser = false;
+    // retrieve user display name
+    String userFullName = null;
+    List<?> names = (List<?>) saml2Profile.getAttribute(this.displayNameAttributeName);
+    if (names != null && !names.isEmpty()) {
+      userFullName = (String) names.get(0);
+    }
+
+    // update user full name if necessary
+    if (user != null && StringUtils.isNotBlank(userFullName)) {
+      if (userFullName.compareTo(user.getFullName()) != 0) {
+        user.setFullName(userFullName);
+        saveUser = true;
+      }
+    }
+    return saveUser;
+  }
+
+  /**
+   * load the granted authorities from the SAML Profile.
+   * @param saml2Profile SAML Profile.
+   * @return granted authorities.
+   */
+  private List<GrantedAuthority> loadGrantedAuthorities(Saml2Profile saml2Profile) {
+    // prepare list of groups
+    List<?> groups = (List<?>) saml2Profile.getAttribute(this.groupsAttributeName);
+    if (groups == null) {
+      groups = new ArrayList<String>();
+    }
+
+    // build list of authorities
+    List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+    authorities.add(AUTHENTICATED_AUTHORITY);
+    if (!groups.isEmpty()) {
+      for (Object group : groups) {
+        SamlGroupAuthority ga = new SamlGroupAuthority((String)group);
+        authorities.add(ga);
+      }
+    }
+    return authorities;
+  }
+
+  /**
+   * set the user email.
+   * @param user current user.
+   * @param emails user emails.
+   * @return true if the current user is modified.
+   */
+  private boolean  modifyUserEmail(User user, List<?> emails) {
+    String userEmail = null;
+    boolean saveUser = false;
+    if (emails != null && !emails.isEmpty()) {
+      userEmail = (String) emails.get(0);
+    }
+
+    try {
+      if(user != null && StringUtils.isNotBlank(userEmail)){
+        UserProperty currentUserEmailProperty = user.getProperty(UserProperty.class);
+        if (currentUserEmailProperty!=null
+                && userEmail.compareTo(StringUtils.defaultIfBlank(currentUserEmailProperty.getAddress(),"")) != 0) {
+          // email address
+          UserProperty emailProperty = new UserProperty(userEmail);
+          user.addProperty(emailProperty);
+          saveUser = true;
+        }
+      }
+    } catch (IOException e) {
+      LOG.log(Level.SEVERE, "Could not update user email", e);
+    }
+    return saveUser;
+  }
+
+  /**
    * Extract a usable Username from the samlProfile object.
-   * @param saml2Profile
-   * @return
+   * @param saml2Profile user profile
+   * @return the username or if it is not possible to get the attribute the profile ID
    */
   private String getUsernameFromProfile(Saml2Profile saml2Profile) {
     if (usernameAttributeName != null) {
@@ -421,9 +512,9 @@ public class SamlSecurityRealm extends SecurityRealm {
     return usernameCaseConversion;
   }
 
-  public String getLogoutUrl() {
-    return logoutUrl;
-  }
+  public String getEmailAttributeName() { return emailAttributeName; }
+
+  public String getLogoutUrl() { return logoutUrl; }
 
   @Extension
   public static final class DescriptorImpl extends Descriptor<SecurityRealm> {
