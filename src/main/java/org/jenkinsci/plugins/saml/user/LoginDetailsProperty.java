@@ -21,11 +21,11 @@ import hudson.model.Descriptor.FormException;
 import hudson.model.User;
 import hudson.model.UserProperty;
 import hudson.model.UserPropertyDescriptor;
-import hudson.security.SecurityRealm;
-import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import org.acegisecurity.GrantedAuthority;
 import org.apache.commons.lang.time.FastDateFormat;
+import hudson.security.SecurityRealm;
+import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.saml.SamlSecurityRealm;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
@@ -33,7 +33,6 @@ import org.kohsuke.stapler.StaplerRequest;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 
 /**
  * Store details about create and login processes

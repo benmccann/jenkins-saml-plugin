@@ -20,6 +20,9 @@ package org.jenkinsci.plugins.saml;
 import com.google.common.base.Preconditions;
 import hudson.Extension;
 import hudson.Util;
+import hudson.security.AuthorizationStrategy;
+import hudson.security.GroupDetails;
+import hudson.security.UserMayOrMayNotExistException;
 import hudson.util.FormValidation;
 import hudson.model.Descriptor;
 import hudson.model.User;
@@ -29,6 +32,7 @@ import jenkins.model.Jenkins;
 import jenkins.security.SecurityListener;
 import org.acegisecurity.*;
 import org.acegisecurity.context.SecurityContextHolder;
+import org.acegisecurity.userdetails.UsernameNotFoundException;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.*;
 import org.opensaml.common.xml.SAMLConstants;
@@ -41,6 +45,7 @@ import org.pac4j.core.exception.RequiresHttpAction;
 import org.pac4j.saml.client.Saml2Client;
 import org.pac4j.saml.credentials.Saml2Credentials;
 import org.pac4j.saml.profile.Saml2Profile;
+import org.springframework.dao.DataAccessException;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -48,6 +53,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -439,6 +446,26 @@ public class SamlSecurityRealm extends SecurityRealm {
     super.doLogout(req,rsp);
       LOG.log(Level.FINEST,"Here we could do the SAML Single Logout");
       //TODO JENKINS-42448
+  }
+
+  @Override
+  public GroupDetails loadGroupByGroupname(String groupname) throws UsernameNotFoundException, DataAccessException {
+    GroupDetails dg =  new SamlGroupDetails(groupname);
+
+    if(dg.getMembers().isEmpty()){
+      throw new UserMayOrMayNotExistException(groupname);
+    }
+    return dg;
+  }
+
+  @Override
+  public GroupDetails loadGroupByGroupname(String groupname, boolean fetchMembers)
+          throws UsernameNotFoundException, DataAccessException {
+    GroupDetails dg = loadGroupByGroupname(groupname);
+    if(fetchMembers){
+      dg.getMembers();
+    }
+    return dg;
   }
 
   private String baseUrl() {
