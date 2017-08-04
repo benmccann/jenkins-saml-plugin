@@ -93,24 +93,8 @@ public class SamlPluginConfig {
         return getAdvancedConfiguration() != null ? getAdvancedConfiguration().getSpEntityId() : null;
     }
 
-    public Integer getMaximumSessionLifetime() {
-        return getAdvancedConfiguration() != null ? getAdvancedConfiguration().getMaximumSessionLifetime() : null;
-    }
-
     public SamlEncryptionData getEncryptionData() {
         return encryptionData;
-    }
-
-    public String getKeystorePath() {
-        return getEncryptionData() != null ? getEncryptionData().getKeystorePath() : null;
-    }
-
-    public String getKeystorePassword() {
-        return getEncryptionData() != null ? getEncryptionData().getKeystorePassword() : null;
-    }
-
-    public String getPrivateKeyPassword() {
-        return getEncryptionData() != null ? getEncryptionData().getPrivateKeyPassword() : null;
     }
 
     public String getUsernameCaseConversion() {
@@ -125,38 +109,6 @@ public class SamlPluginConfig {
         return logoutUrl;
     }
 
-    public void setDisplayNameAttributeName(String displayNameAttributeName) {
-        if (displayNameAttributeName != null && !displayNameAttributeName.isEmpty()) {
-            this.displayNameAttributeName = displayNameAttributeName;
-        }
-    }
-
-    public void setGroupsAttributeName(String groupsAttributeName) {
-        if (groupsAttributeName != null && !groupsAttributeName.isEmpty()) {
-            this.groupsAttributeName = groupsAttributeName;
-        }
-    }
-
-    public void setMaximumAuthenticationLifetime(Integer maximumAuthenticationLifetime) {
-        if (maximumAuthenticationLifetime != null && maximumAuthenticationLifetime > 0) {
-            this.maximumAuthenticationLifetime = maximumAuthenticationLifetime;
-        }
-    }
-
-    public void setEmailAttributeName(String emailAttributeName) {
-        if (StringUtils.isNotBlank(emailAttributeName)) {
-            this.emailAttributeName = hudson.Util.fixEmptyAndTrim(emailAttributeName);
-        }
-    }
-
-    public void setEncryptionData(SamlEncryptionData encryptionData) {
-        this.encryptionData = encryptionData;
-    }
-
-    public void setAdvancedConfiguration(SamlAdvancedConfiguration advancedConfiguration) {
-        this.advancedConfiguration = advancedConfiguration;
-    }
-
     public String getConsumerServiceUrl() {
         return baseUrl() + CONSUMER_SERVICE_URL_PATH;
     }
@@ -168,14 +120,16 @@ public class SamlPluginConfig {
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer("SamlPluginConfig{");
-        sb.append("idpMetadata='").append(idpMetadata).append('\'');
-        sb.append(", displayNameAttributeName='").append(displayNameAttributeName).append('\'');
-        sb.append(", groupsAttributeName='").append(groupsAttributeName).append('\'');
-        sb.append(", maximumAuthenticationLifetime=").append(maximumAuthenticationLifetime);
-        sb.append(", usernameCaseConversion='").append(usernameCaseConversion).append('\'');
-        sb.append(", usernameAttributeName='").append(usernameAttributeName).append('\'');
-        sb.append(", encryptionData=").append(encryptionData);
-        sb.append(", advancedConfiguration=").append(advancedConfiguration);
+        sb.append("idpMetadata='").append(getIdpMetadata()).append('\'');
+        sb.append(", displayNameAttributeName='").append(getDisplayNameAttributeName()).append('\'');
+        sb.append(", groupsAttributeName='").append(getGroupsAttributeName()).append('\'');
+        sb.append(", emailAttributeName='").append(getEmailAttributeName()).append('\'');
+        sb.append(", usernameAttributeName='").append(getUsernameAttributeName()).append('\'');
+        sb.append(", maximumAuthenticationLifetime=").append(getMaximumAuthenticationLifetime());
+        sb.append(", usernameCaseConversion='").append(getUsernameCaseConversion()).append('\'');
+        sb.append(", logoutUrl='").append(getLogoutUrl()).append('\'');
+        sb.append(", encryptionData=").append(getEncryptionData());
+        sb.append(", advancedConfiguration=").append(getAdvancedConfiguration());
         sb.append('}');
         return sb.toString();
     }
