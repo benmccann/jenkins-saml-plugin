@@ -17,6 +17,10 @@ under the License. */
 
 package org.jenkinsci.plugins.saml;
 
+import hudson.XmlFile;
+import hudson.security.AuthorizationStrategy;
+import hudson.util.Secret;
+import java.io.File;
 import org.acegisecurity.GrantedAuthority;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -28,6 +32,7 @@ import org.jvnet.hudson.test.recipes.LocalData;
 import org.mockito.Mockito;
 
 import javax.servlet.http.HttpSession;
+import static org.hamcrest.Matchers.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +45,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import org.jvnet.hudson.test.Issue;
 import static org.mockito.Mockito.when;
 
 
@@ -96,9 +102,10 @@ public class SamlSecurityRealmTest {
         assertEquals(true, samlSecurityRealm.getIdpMetadata().startsWith("<?xml version"));
     }
 
+    @Issue("JENKINS-46007")
     @LocalData
     @Test
-    public void testReadSimpleConfigurationEncryptionData() {
+    public void testReadSimpleConfigurationEncryptionData() throws Exception {
         assertEquals("urn:mace:dir:attribute-def:displayName", samlSecurityRealm.getDisplayNameAttributeName());
         assertEquals("urn:mace:dir:attribute-def:groups", samlSecurityRealm.getGroupsAttributeName());
         assertEquals(86400, samlSecurityRealm.getMaximumAuthenticationLifetime().longValue());
@@ -106,8 +113,14 @@ public class SamlSecurityRealmTest {
         assertEquals("urn:mace:dir:attribute-def:uid", samlSecurityRealm.getUsernameAttributeName());
         assertEquals(true, samlSecurityRealm.getIdpMetadata().startsWith("<?xml version"));
         assertEquals("/home/jdk/keystore", samlSecurityRealm.getKeystorePath());
-        assertEquals("changeit", samlSecurityRealm.getKeystorePassword());
-        assertEquals("changeit", samlSecurityRealm.getPrivateKeyPassword());
+        assertEquals(Secret.fromString("changeitks"), samlSecurityRealm.getKeystorePassword());
+        assertEquals(Secret.fromString("changeitpk"), samlSecurityRealm.getPrivateKeyPassword());
+        jenkinsRule.jenkins.setAuthorizationStrategy(AuthorizationStrategy.UNSECURED); // since we cannot actually log in during the test
+        jenkinsRule.submit(jenkinsRule.createWebClient().goTo("configureSecurity").getFormByName("config"));
+        samlSecurityRealm = (SamlSecurityRealm) jenkinsRule.jenkins.getSecurityRealm();
+        assertEquals(Secret.fromString("changeitks"), samlSecurityRealm.getKeystorePassword());
+        assertEquals(Secret.fromString("changeitpk"), samlSecurityRealm.getPrivateKeyPassword());
+        assertThat(new XmlFile(new File(jenkinsRule.jenkins.root, "config.xml")).asString(), not(containsString("changeit")));
     }
 
     @LocalData
@@ -120,8 +133,8 @@ public class SamlSecurityRealmTest {
         assertEquals("urn:mace:dir:attribute-def:uid", samlSecurityRealm.getUsernameAttributeName());
         assertEquals(true, samlSecurityRealm.getIdpMetadata().startsWith("<?xml version"));
         assertEquals("/home/jdk/keystore", samlSecurityRealm.getKeystorePath());
-        assertEquals("changeit", samlSecurityRealm.getKeystorePassword());
-        assertEquals("changeit", samlSecurityRealm.getPrivateKeyPassword());
+        assertEquals(Secret.fromString("changeit"), samlSecurityRealm.getKeystorePassword());
+        assertEquals(Secret.fromString("changeit"), samlSecurityRealm.getPrivateKeyPassword());
         assertEquals(true, samlSecurityRealm.getForceAuthn());
         assertEquals("anotherContext", samlSecurityRealm.getAuthnContextClassRef());
         assertEquals("spEntityId", samlSecurityRealm.getSpEntityId());
@@ -176,7 +189,7 @@ public class SamlSecurityRealmTest {
         assertEquals(token.getPrincipal().equals(userDetails),true);
 
         assertThat(new SamlEncryptionData(null,null,null, null).toString(), containsString("SamlEncryptionData"));
-        assertThat(new SamlEncryptionData("","","", "").toString(), containsString("SamlEncryptionData"));
+        assertThat(new SamlEncryptionData("", Secret.fromString(""), Secret.fromString(""), "").toString(), containsString("SamlEncryptionData"));
 
         assertEquals(new SamlFileResource("fileNotExists").exists(),false);
         SamlFileResource file = new SamlFileResource("fileWillExists","data");
