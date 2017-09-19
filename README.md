@@ -31,6 +31,7 @@ Report new issue on https://issues.jenkins-ci.org on component **saml-plugin**.
 Troubleshooting
 ----------------
 When you face an issue you could try to enable a logger to these two packages on the level specified and try to find errors, this will show in logs the information send from Jenkins (SP) to the SAML service (IdP), this information could be sensitive so take care where you copy/send it.  
+
     * org.jenkinsci.plugins.saml - FINEST
     * org.pac4j - FINE
     
