@@ -19,9 +19,9 @@ Releasing
 Create `~/.m2/settings.xml` per [plugin tutorial](https://wiki.jenkins-ci.org/display/JENKINS/Plugin+tutorial) and include password as described in [hosting plugins](https://wiki.jenkins-ci.org/display/JENKINS/Hosting+Plugins).
 Run `mvn release:prepare release:perform`
 
-Reporting issues 
+Reporting issues
 ----------------
-Check first is your issue in [open issues](https://issues.jenkins-ci.org/browse/JENKINS-38625?jql=project%20%3D%20JENKINS%20AND%20status%20in%20(Open%2C%20%22In%20Progress%22%2C%20Reopened%2C%20%22In%20Review%22)%20AND%20component%20%3D%20saml-plugin). 
+Check first is your issue in [open issues](https://issues.jenkins-ci.org/browse/JENKINS-38625?jql=project%20%3D%20JENKINS%20AND%20status%20in%20(Open%2C%20%22In%20Progress%22%2C%20Reopened%2C%20%22In%20Review%22)%20AND%20component%20%3D%20saml-plugin).
 Report new issue on https://issues.jenkins-ci.org on component **saml-plugin**.
 
 [How to report an issue](https://wiki.jenkins.io/display/JENKINS/How+to+report+an+issue)
@@ -65,3 +65,19 @@ org.pac4j.saml.exceptions.SAMLException: Identity provider has no single sign on
 	at org.kohsuke.stapler.Stapler.tryInvoke(Stapler.java:715)
 ```
 
+**Identity provider does not support encryption settings**
+
+* Downgrade to 0.14 version, if it works, then enable encryption on that version to be sure that this is the issue
+
+```
+2017-10-18 19:56:28.987+0000 [id=23]    WARNING o.e.j.s.h.ContextHandler$Context#log: Error while serving https://jenkins.example.com/securityRealm/finishLogin
+org.opensaml.messaging.decoder.MessageDecodingException: This message decoder only supports the HTTP POST method
+```
+
+```
+Caused by: java.lang.IllegalArgumentException: Illegal base64 character d
+    at java.util.Base64$Decoder.decode0(Base64.java:714)
+    at java.util.Base64$Decoder.decode(Base64.java:526)
+    at java.util.Base64$Decoder.decode(Base64.java:549)
+    at org.jenkinsci.plugins.saml.SamlSecurityRealm.doFinishLogin(SamlSecurityRealm.java:258)
+```
