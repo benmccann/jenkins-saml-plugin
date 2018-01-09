@@ -17,16 +17,22 @@ under the License. */
 
 package org.jenkinsci.plugins.saml;
 
+import hudson.Extension;
 import hudson.Util;
 
+import hudson.model.AbstractDescribableImpl;
+import hudson.model.Descriptor;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
+
+import static org.jenkinsci.plugins.saml.SamlSecurityRealm.ERROR_NOT_VALID_NUMBER;
+import static org.jenkinsci.plugins.saml.SamlSecurityRealm.ERROR_ONLY_SPACES_FIELD_VALUE;
 
 /**
  * Simple immutable data class to hold the optional advanced configuration data section
  * of the plugin's configuration page
  */
-public class SamlAdvancedConfiguration {
+public class SamlAdvancedConfiguration extends AbstractDescribableImpl<SamlAdvancedConfiguration> {
     private final Boolean forceAuthn;
     private final String authnContextClassRef;
     private final String spEntityId;
@@ -69,5 +75,70 @@ public class SamlAdvancedConfiguration {
         sb.append(", maximumSessionLifetime=").append(getMaximumSessionLifetime() != null ? getMaximumSessionLifetime() : "none");
         sb.append('}');
         return sb.toString();
+    }
+
+    @Extension
+    public static final class DescriptorImpl extends Descriptor<SamlAdvancedConfiguration> {
+        public DescriptorImpl() {
+            super();
+        }
+
+        public DescriptorImpl(Class<? extends SamlAdvancedConfiguration> clazz) {
+            super(clazz);
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Advanced Configuration";
+        }
+
+        public hudson.util.FormValidation doCheckAuthnContextClassRef(@org.kohsuke.stapler.QueryParameter String authnContextClassRef) {
+            if (StringUtils.isEmpty(authnContextClassRef)) {
+                return hudson.util.FormValidation.ok();
+            }
+
+            if (StringUtils.isBlank(authnContextClassRef)) {
+                return hudson.util.FormValidation.error(ERROR_ONLY_SPACES_FIELD_VALUE);
+            }
+
+            return hudson.util.FormValidation.ok();
+        }
+
+
+        public hudson.util.FormValidation doCheckSpEntityId(@org.kohsuke.stapler.QueryParameter String spEntityId) {
+            if (StringUtils.isEmpty(spEntityId)) {
+                return hudson.util.FormValidation.ok();
+            }
+
+            if (StringUtils.isBlank(spEntityId)) {
+                return hudson.util.FormValidation.error(ERROR_ONLY_SPACES_FIELD_VALUE);
+            }
+
+            return hudson.util.FormValidation.ok();
+        }
+
+        public hudson.util.FormValidation doCheckMaximumSessionLifetime(@org.kohsuke.stapler.QueryParameter String maximumSessionLifetime) {
+            if (StringUtils.isEmpty(maximumSessionLifetime)) {
+                return hudson.util.FormValidation.ok();
+            }
+
+            long i = 0;
+            try {
+                i = Long.parseLong(maximumSessionLifetime);
+            } catch (NumberFormatException e) {
+                return hudson.util.FormValidation.error(ERROR_NOT_VALID_NUMBER, e);
+            }
+
+            if (i < 0) {
+                return hudson.util.FormValidation.error(ERROR_NOT_VALID_NUMBER);
+            }
+
+            if (i > Integer.MAX_VALUE) {
+                return hudson.util.FormValidation.error(ERROR_NOT_VALID_NUMBER);
+            }
+
+            return hudson.util.FormValidation.ok();
+        }
+
     }
 }

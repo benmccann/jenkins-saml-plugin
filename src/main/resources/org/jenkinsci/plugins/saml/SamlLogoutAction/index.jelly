@@ -19,14 +19,11 @@
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:i="jelly:fmt">
-    <l:layout norefresh="true">
+    <l:layout title="" norefresh="true">
         <l:main-panel>
             <j:choose>
                 <j:when test="${h.isAnonymous()}">
-                    <p>You are now logged out of Jenkins, however this has not logged you out of
-                       <a href="${it.getSamlURL}">SAML</a>
-                        .
-                    </p>
+                    <p>You are now logged out of Jenkins, however this has not logged you out of SAML.</p>
                     <p>Have a nice day</p>
                 </j:when>
                 <j:otherwise>

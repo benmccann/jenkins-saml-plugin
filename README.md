@@ -39,6 +39,43 @@ When you face an issue you could try to enable a logger to these two packages on
     * org.jenkinsci.plugins.saml - FINEST
     * org.pac4j - FINE
 
+**Azure AD**
+
+After leaving the system for some period of time (like overnight) and trying to log in again you get this error
+
+```
+org.pac4j.saml.exceptions.SAMLException: No valid subject assertion found in response 
+at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validateSamlSSOResponse(SAML2DefaultResponseValidator.java:313) 
+at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validate(SAML2DefaultResponseValidator.java:138) 
+at org.pac4j.saml.sso.impl.SAML2WebSSOMessageReceiver.receiveMessage(SAML2WebSSOMessageReceiver.java:77) 
+at org.pac4j.saml.sso.impl.SAML2WebSSOProfileHandler.receive(SAML2WebSSOProfileHandler.java:35) 
+at org.pac4j.saml.client.SAML2Client.retrieveCredentials(SAML2Client.java:225) 
+at org.pac4j.saml.client.SAML2Client.retrieveCredentials(SAML2Client.java:60) 
+at org.pac4j.core.client.IndirectClient.getCredentials(IndirectClient.java:106) 
+at org.jenkinsci.plugins.saml.SamlProfileWrapper.process(SamlProfileWrapper.java:53) 
+at org.jenkinsci.plugins.saml.SamlProfileWrapper.process(SamlProfileWrapper.java:33) 
+at org.jenkinsci.plugins.saml.OpenSAMLWrapper.get(OpenSAMLWrapper.java:65) 
+at org.jenkinsci.plugins.saml.SamlSecurityRealm.doFinishLogin(SamlSecurityRealm.java:265) 
+at java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:627) 
+at org.kohsuke.stapler.Function$MethodFunction.invoke(Function.java:343) 
+at org.kohsuke.stapler.Function.bindAndInvoke(Function.java:184) 
+at org.kohsuke.stapler.Function.bindAndInvokeAndServeResponse(Function.java:117) 
+at org.kohsuke.stapler.MetaClass$1.doDispatch(MetaClass.java:129) 
+at org.kohsuke.stapler.NameBasedDispatcher.dispatch(NameBasedDispatcher.java:58) 
+at org.kohsuke.stapler.Stapler.tryInvoke(Stapler.java:715) 
+Caused: javax.servlet.ServletException at org.kohsuke.stapler.Stapler.tryInvoke(Stapler.java:765) 
+
+...
+at winstone.BoundedExecutorService$1.run(BoundedExecutorService.java:77) 
+at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) 
+at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) 
+at java.lang.Thread.run(Thread.java:748)
+```
+* Click on logout button, then hit the Jenkins sign-in again.
+* Clear the cookies in your browser or Go to Azure and sign out of the user name, then hit the Jenkins sign-in again.
+* The max lifetime of the Access Token in Azure AD seems to be 24 hours where the refresh token can live for a maximum of 14 days (if the access token expires the refresh token is used to try to obtain a new access token).  The Jenkins setting in Configure Global Security > SAML Identity Provider Settings > Maximum Authentication Lifetime is 24 hours (86400 in seconds) upping this to 1209600 (which is 14 days in seconds/the max lifetime of the Refresh Token).
+* Enable the advanced "force authentication" setting is another workaround.
+ 
 
 **Identity provider has no single sign on service available for the selected...**
 
@@ -67,6 +104,7 @@ org.pac4j.saml.exceptions.SAMLException: Identity provider has no single sign on
 
 **Identity provider does not support encryption settings**
 
+* Check the encryption methods, signing methods, and keys types supported by your IdP and set the encryption settings correctly  
 * Downgrade to 0.14 version, if it works, then enable encryption on that version to be sure that this is the issue
 * Check the JDK version does not have issues like this [JDK-8176043](https://bugs.openjdk.java.net/browse/JDK-8176043)
 

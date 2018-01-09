@@ -32,9 +32,7 @@ import org.jvnet.hudson.test.recipes.LocalData;
 import org.mockito.Mockito;
 
 import javax.servlet.http.HttpSession;
-import static org.hamcrest.Matchers.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -42,10 +40,8 @@ import java.util.logging.Logger;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import org.jvnet.hudson.test.Issue;
@@ -82,51 +78,51 @@ public class SamlSecurityRealmTest {
 
     @LocalData
     @Test
-    public void testReadSimpleConfiguration() {
+    public void testReadSimpleConfiguration() throws IOException {
         assertEquals("urn:mace:dir:attribute-def:displayName", samlSecurityRealm.getDisplayNameAttributeName());
         assertEquals("urn:mace:dir:attribute-def:groups", samlSecurityRealm.getGroupsAttributeName());
         assertEquals(86400, samlSecurityRealm.getMaximumAuthenticationLifetime().longValue());
         assertEquals("none", samlSecurityRealm.getUsernameCaseConversion());
         assertEquals("urn:mace:dir:attribute-def:mail", samlSecurityRealm.getEmailAttributeName());
         assertEquals("urn:mace:dir:attribute-def:uid", samlSecurityRealm.getUsernameAttributeName());
-        assertEquals(true, samlSecurityRealm.getIdpMetadata().startsWith("<?xml version"));
+        assertEquals(true, samlSecurityRealm.getIdpMetadataConfiguration().getIdpMetadata().startsWith("<?xml version"));
         assertEquals(SAML2_REDIRECT_BINDING_URI, samlSecurityRealm.getBinding());
     }
 
     @LocalData
     @Test
-    public void testReadSimpleConfigurationHTTPPost() {
+    public void testReadSimpleConfigurationHTTPPost() throws IOException {
         assertEquals("urn:mace:dir:attribute-def:displayName", samlSecurityRealm.getDisplayNameAttributeName());
         assertEquals("urn:mace:dir:attribute-def:groups", samlSecurityRealm.getGroupsAttributeName());
         assertEquals(86400, samlSecurityRealm.getMaximumAuthenticationLifetime().longValue());
         assertEquals("none", samlSecurityRealm.getUsernameCaseConversion());
         assertEquals("urn:mace:dir:attribute-def:mail", samlSecurityRealm.getEmailAttributeName());
         assertEquals("urn:mace:dir:attribute-def:uid", samlSecurityRealm.getUsernameAttributeName());
-        assertEquals(true, samlSecurityRealm.getIdpMetadata().startsWith("<?xml version"));
+        assertEquals(true, samlSecurityRealm.getIdpMetadataConfiguration().getIdpMetadata().startsWith("<?xml version"));
         assertEquals(SAML2_POST_BINDING_URI, samlSecurityRealm.getBinding());
     }
 
     @LocalData
     @Test
-    public void testReadSimpleConfigurationLowercase() {
+    public void testReadSimpleConfigurationLowercase() throws Exception {
         assertEquals("urn:mace:dir:attribute-def:displayName", samlSecurityRealm.getDisplayNameAttributeName());
         assertEquals("urn:mace:dir:attribute-def:groups", samlSecurityRealm.getGroupsAttributeName());
         assertEquals(86400, samlSecurityRealm.getMaximumAuthenticationLifetime().longValue());
         assertEquals("lowercase", samlSecurityRealm.getUsernameCaseConversion());
         assertEquals("urn:mace:dir:attribute-def:uid", samlSecurityRealm.getUsernameAttributeName());
-        assertEquals(true, samlSecurityRealm.getIdpMetadata().startsWith("<?xml version"));
+        assertEquals(true, samlSecurityRealm.getIdpMetadataConfiguration().getIdpMetadata().startsWith("<?xml version"));
         assertEquals(SAML2_REDIRECT_BINDING_URI, samlSecurityRealm.getBinding());
     }
 
     @LocalData
     @Test
-    public void testReadSimpleConfigurationUppercase() {
+    public void testReadSimpleConfigurationUppercase() throws Exception {
         assertEquals("urn:mace:dir:attribute-def:displayName", samlSecurityRealm.getDisplayNameAttributeName());
         assertEquals("urn:mace:dir:attribute-def:groups", samlSecurityRealm.getGroupsAttributeName());
         assertEquals(86400, samlSecurityRealm.getMaximumAuthenticationLifetime().longValue());
         assertEquals("uppercase", samlSecurityRealm.getUsernameCaseConversion());
         assertEquals("urn:mace:dir:attribute-def:uid", samlSecurityRealm.getUsernameAttributeName());
-        assertEquals(true, samlSecurityRealm.getIdpMetadata().startsWith("<?xml version"));
+        assertEquals(true, samlSecurityRealm.getIdpMetadataConfiguration().getIdpMetadata().startsWith("<?xml version"));
         assertEquals(SAML2_REDIRECT_BINDING_URI, samlSecurityRealm.getBinding());
     }
 
@@ -139,36 +135,36 @@ public class SamlSecurityRealmTest {
         assertEquals(86400, samlSecurityRealm.getMaximumAuthenticationLifetime().longValue());
         assertEquals("none", samlSecurityRealm.getUsernameCaseConversion());
         assertEquals("urn:mace:dir:attribute-def:uid", samlSecurityRealm.getUsernameAttributeName());
-        assertEquals(true, samlSecurityRealm.getIdpMetadata().startsWith("<?xml version"));
+        assertEquals(true, samlSecurityRealm.getIdpMetadataConfiguration().getIdpMetadata().startsWith("<?xml version"));
+        assertEquals("/home/jdk/keystore", samlSecurityRealm.getEncryptionData().getKeystorePath());
+        assertEquals(Secret.fromString("changeitks"), samlSecurityRealm.getEncryptionData().getKeystorePassword());
+        assertEquals(Secret.fromString("changeitpk"), samlSecurityRealm.getEncryptionData().getPrivateKeyPassword());
         assertEquals(SAML2_REDIRECT_BINDING_URI, samlSecurityRealm.getBinding());
-        assertEquals("/home/jdk/keystore", samlSecurityRealm.getKeystorePath());
-        assertEquals(Secret.fromString("changeitks"), samlSecurityRealm.getKeystorePassword());
-        assertEquals(Secret.fromString("changeitpk"), samlSecurityRealm.getPrivateKeyPassword());
         jenkinsRule.jenkins.setAuthorizationStrategy(AuthorizationStrategy.UNSECURED); // since we cannot actually log in during the test
         jenkinsRule.submit(jenkinsRule.createWebClient().goTo("configureSecurity").getFormByName("config"));
         samlSecurityRealm = (SamlSecurityRealm) jenkinsRule.jenkins.getSecurityRealm();
-        assertEquals(Secret.fromString("changeitks"), samlSecurityRealm.getKeystorePassword());
-        assertEquals(Secret.fromString("changeitpk"), samlSecurityRealm.getPrivateKeyPassword());
+        assertEquals(Secret.fromString("changeitks"), samlSecurityRealm.getEncryptionData().getKeystorePassword());
+        assertEquals(Secret.fromString("changeitpk"), samlSecurityRealm.getEncryptionData().getPrivateKeyPassword());
         assertThat(new XmlFile(new File(jenkinsRule.jenkins.root, "config.xml")).asString(), not(containsString("changeit")));
     }
 
     @LocalData
     @Test
-    public void testReadSimpleConfigurationAdvancedConfiguration() {
+    public void testReadSimpleConfigurationAdvancedConfiguration() throws Exception {
         assertEquals("urn:mace:dir:attribute-def:displayName", samlSecurityRealm.getDisplayNameAttributeName());
         assertEquals("urn:mace:dir:attribute-def:groups", samlSecurityRealm.getGroupsAttributeName());
         assertEquals(86400, samlSecurityRealm.getMaximumAuthenticationLifetime().longValue());
         assertEquals("none", samlSecurityRealm.getUsernameCaseConversion());
         assertEquals("urn:mace:dir:attribute-def:uid", samlSecurityRealm.getUsernameAttributeName());
-        assertEquals(true, samlSecurityRealm.getIdpMetadata().startsWith("<?xml version"));
+        assertEquals(true, samlSecurityRealm.getIdpMetadataConfiguration().getIdpMetadata().startsWith("<?xml version"));
+        assertEquals("/home/jdk/keystore", samlSecurityRealm.getEncryptionData().getKeystorePath());
+        assertEquals(Secret.fromString("changeit"), samlSecurityRealm.getEncryptionData().getKeystorePassword());
+        assertEquals(Secret.fromString("changeit"), samlSecurityRealm.getEncryptionData().getPrivateKeyPassword());
+        assertEquals(true, samlSecurityRealm.getAdvancedConfiguration().getForceAuthn());
+        assertEquals("anotherContext", samlSecurityRealm.getAdvancedConfiguration().getAuthnContextClassRef());
+        assertEquals("spEntityId", samlSecurityRealm.getAdvancedConfiguration().getSpEntityId());
+        assertEquals(86400, samlSecurityRealm.getAdvancedConfiguration().getMaximumSessionLifetime().longValue());
         assertEquals(SAML2_REDIRECT_BINDING_URI, samlSecurityRealm.getBinding());
-        assertEquals("/home/jdk/keystore", samlSecurityRealm.getKeystorePath());
-        assertEquals(Secret.fromString("changeit"), samlSecurityRealm.getKeystorePassword());
-        assertEquals(Secret.fromString("changeit"), samlSecurityRealm.getPrivateKeyPassword());
-        assertEquals(true, samlSecurityRealm.getForceAuthn());
-        assertEquals("anotherContext", samlSecurityRealm.getAuthnContextClassRef());
-        assertEquals("spEntityId", samlSecurityRealm.getSpEntityId());
-        assertEquals(86400, samlSecurityRealm.getMaximumSessionLifetime().longValue());
     }
 
     @LocalData("testHugeNumberOfUsers")
@@ -185,12 +181,12 @@ public class SamlSecurityRealmTest {
 
     @LocalData("testReadSimpleConfiguration")
     @Test
-    public void testGetters() throws java.io.IOException {
+    public void testGetters() throws IOException {
         SamlPluginConfig samlPluginConfig = new SamlPluginConfig(samlSecurityRealm.getDisplayNameAttributeName(),
                 samlSecurityRealm.getGroupsAttributeName(),
                 samlSecurityRealm.getMaximumAuthenticationLifetime(),
                 samlSecurityRealm.getEmailAttributeName(),
-                samlSecurityRealm.getIdpMetadata(),
+                samlSecurityRealm.getIdpMetadataConfiguration(),
                 samlSecurityRealm.getUsernameCaseConversion(),
                 samlSecurityRealm.getUsernameAttributeName(),
                 samlSecurityRealm.getLogoutUrl(),
@@ -238,7 +234,8 @@ public class SamlSecurityRealmTest {
         // without user interaction
 
         String idpMetadata = FileUtils.readFileToString(new File(SamlSecurityRealm.getIDPMetadataFilePath()));
-        String configuredMetadata = ((SamlSecurityRealm) jenkinsRule.getInstance().getSecurityRealm()).getIdpMetadata();
+        String configuredMetadata = ((SamlSecurityRealm) jenkinsRule.getInstance().getSecurityRealm())
+                .getIdpMetadataConfiguration().getIdpMetadata();
         idpMetadata = idpMetadata.replace(" ", ""); // remove spaces
         idpMetadata = idpMetadata.replace("\\n", ""); // remove new lines
         configuredMetadata = configuredMetadata.replace(" ", ""); // remove spaces

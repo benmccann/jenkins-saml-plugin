@@ -93,9 +93,6 @@ public abstract class OpenSAMLWrapper<T> {
      * @return a SAML2Client object to interact with the IdP service.
      */
     protected SAML2Client createSAML2Client() {
-        //FIXME [kuisathaverat][JENKINS-40144] Throws NPE I do not like it
-        Preconditions.checkNotNull(samlPluginConfig.getIdpMetadata());
-
         final SAML2ClientConfiguration config = new SAML2ClientConfiguration();
         config.setIdentityProviderMetadataResource(new SamlFileResource(SamlSecurityRealm.getIDPMetadataFilePath()));
         config.setDestinationBindingType(samlPluginConfig.getBinding());

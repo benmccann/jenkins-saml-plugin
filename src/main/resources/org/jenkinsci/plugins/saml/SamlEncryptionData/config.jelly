@@ -1,0 +1,18 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core"
+         xmlns:f="/lib/form">
+    <f:entry title="Keystore path" field="keystorePath" help="/plugin/saml/help/keystorePath.html">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="Keystore password" field="keystorePassword" help="/plugin/saml/help/keystorePassword.html">
+        <f:password/>
+    </f:entry>
+    <f:entry title="Private Key Alias" field="privateKeyAlias" help="/plugin/saml/help/keyAlias.html">
+        <f:textbox/>
+    </f:entry>
+    <f:entry title="Private Key password" field="privateKeyPassword" help="/plugin/saml/help/keyPassword.html">
+        <f:password/>
+    </f:entry>
+    <f:validateButton title="Test keystore" progress="Testing..." method="testKeyStore"
+                      with="keystorePath,keystorePassword,privateKeyPassword,privateKeyAlias"/>
+</j:jelly>

@@ -25,16 +25,15 @@ import hudson.model.Descriptor;
 import hudson.model.User;
 import hudson.security.SecurityRealm;
 import hudson.tasks.Mailer.UserProperty;
-import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import jenkins.security.SecurityListener;
 import org.acegisecurity.*;
 import org.acegisecurity.context.SecurityContextHolder;
 import org.acegisecurity.userdetails.UsernameNotFoundException;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.*;
+import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.pac4j.core.client.RedirectAction;
 import org.pac4j.core.client.RedirectAction.RedirectType;
 import org.springframework.dao.DataAccessException;
@@ -44,15 +43,7 @@ import javax.annotation.Nonnull;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableEntryException;
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,7 +64,7 @@ public class SamlSecurityRealm extends SecurityRealm {
     public static final int DEFAULT_MAXIMUM_AUTHENTICATION_LIFETIME = 24 * 60 * 60; // 24h
     public static final String DEFAULT_USERNAME_CASE_CONVERSION = "none";
     public static final String SP_METADATA_FILE_NAME = "/saml-sp-metadata.xml";
-    public static final String IDP_METADATA_FILE_NAME = "/saml-idp.metadata.xml";
+    public static final String IDP_METADATA_FILE_NAME = "/saml-idp-metadata.xml";
 
     /**
      * form validation messages.
@@ -101,6 +92,8 @@ public class SamlSecurityRealm extends SecurityRealm {
     private static final String REFERER_ATTRIBUTE = SamlSecurityRealm.class.getName() + ".referer";
     public static final String WARN_THERE_IS_NOT_KEY_STORE = "There is not keyStore to validate";
     public static final String ERROR_NOT_KEY_FOUND = "Not key found";
+    public static final String SUCCESS = "Success";
+    public static final String NOT_POSSIBLE_TO_GET_THE_METADATA = "Was not possible to get the Metadata from the URL";
 
     /**
      * configuration settings.
@@ -110,8 +103,7 @@ public class SamlSecurityRealm extends SecurityRealm {
     private int maximumAuthenticationLifetime;
     private String emailAttributeName;
 
-    private final String idpMetadata;
-    private String usernameCaseConversion;
+    private final String usernameCaseConversion;
     private final String usernameAttributeName;
     private final String logoutUrl;
     private String binding;
@@ -119,25 +111,31 @@ public class SamlSecurityRealm extends SecurityRealm {
     private SamlEncryptionData encryptionData;
     private SamlAdvancedConfiguration advancedConfiguration;
 
+    @Deprecated
+    private transient String idpMetadata;
+
+    private IdpMetadataConfiguration idpMetadataConfiguration;
+
     /**
      * Jenkins passes these parameters in when you update the settings.
      * It does this because of the @DataBoundConstructor.
      *
-     * @param idpMetadata                   Identity provider Metadata.
-     * @param displayNameAttributeName      attribute that has the displayname.
-     * @param groupsAttributeName           attribute that has the groups.
-     * @param maximumAuthenticationLifetime maximum time that an identification it is valid.
-     * @param usernameAttributeName         attribute that has the username.
-     * @param emailAttributeName            attribute that has the email.
-     * @param logoutUrl                     optional URL to redirect on logout.
-     * @param advancedConfiguration         advanced configuration settings.
-     * @param encryptionData                encryption configuration settings.
-     * @param usernameCaseConversion        username case sensitive settings.
+     * @param idpMetadataConfiguration      How to obtains the IdP Metadata configuration.
+     * @param displayNameAttributeName      attribute that has the displayname
+     * @param groupsAttributeName           attribute that has the groups
+     * @param maximumAuthenticationLifetime maximum time that an identification it is valid
+     * @param usernameAttributeName         attribute that has the username
+     * @param emailAttributeName            attribute that has the email
+     * @param logoutUrl                     optional URL to redirect on logout
+     * @param advancedConfiguration         advanced configuration settings
+     * @param encryptionData                encryption configuration settings
+     * @param usernameCaseConversion        username case sensitive settings
      * @param binding                       SAML binding method.
+     * @throws IOException if it is not possible to write the IdP metadata file.
      */
     @DataBoundConstructor
     public SamlSecurityRealm(
-            String idpMetadata,
+            IdpMetadataConfiguration idpMetadataConfiguration,
             String displayNameAttributeName,
             String groupsAttributeName,
             Integer maximumAuthenticationLifetime,
@@ -149,8 +147,7 @@ public class SamlSecurityRealm extends SecurityRealm {
             String usernameCaseConversion,
             String binding) throws IOException {
         super();
-
-        this.idpMetadata = hudson.Util.fixEmptyAndTrim(idpMetadata);
+        this.idpMetadataConfiguration = idpMetadataConfiguration;
         this.usernameAttributeName = hudson.Util.fixEmptyAndTrim(usernameAttributeName);
         this.usernameCaseConversion = org.apache.commons.lang.StringUtils.defaultIfBlank(usernameCaseConversion, DEFAULT_USERNAME_CASE_CONVERSION);
         this.logoutUrl = hudson.Util.fixEmptyAndTrim(logoutUrl);
@@ -173,27 +170,29 @@ public class SamlSecurityRealm extends SecurityRealm {
         this.encryptionData = encryptionData;
         this.binding = binding;
 
-        FileUtils.writeStringToFile(new File(getIDPMetadataFilePath()), idpMetadata);
+        this.idpMetadataConfiguration.createIdPMetadataFile();
         LOG.finer(this.toString());
     }
 
     // migration code for the new IdP metadata file
     public Object readResolve() {
+        if(idpMetadataConfiguration == null){
+            idpMetadataConfiguration = new IdpMetadataConfiguration(idpMetadata);
+        }
+
         File idpMetadataFile = new File(getIDPMetadataFilePath());
-        if (!idpMetadataFile.exists() && idpMetadata != null) {
-            try {
-                FileUtils.writeStringToFile(new File(getIDPMetadataFilePath()), idpMetadata);
-            } catch (IOException e) {
-                LOG.log(Level.SEVERE, "Can not write IdP metadata file in JENKINS_HOME", e);
+        if (!idpMetadataFile.exists()){
+            if (idpMetadataConfiguration != null && idpMetadataConfiguration.getXml() != null){
+                try {
+                    idpMetadataConfiguration.createIdPMetadataFile();
+                } catch (IOException e) {
+                    LOG.log(Level.SEVERE, e.getMessage(), e);
+                }
             }
         }
 
         if(StringUtils.isEmpty(getBinding())){
             binding = SAML2_REDIRECT_BINDING_URI;
-        }
-
-        if(StringUtils.isEmpty(getUsernameCaseConversion())){
-            usernameCaseConversion = DEFAULT_USERNAME_CASE_CONVERSION;
         }
 
         return this;
@@ -255,6 +254,7 @@ public class SamlSecurityRealm extends SecurityRealm {
      * @param response http response.
      * @return the http response.
      */
+    @RequirePOST
     public HttpResponse doFinishLogin(final StaplerRequest request, final StaplerResponse response) {
         LOG.finer("SamlSecurityRealm.doFinishLogin called");
         logSamlResponse(request);
@@ -271,10 +271,10 @@ public class SamlSecurityRealm extends SecurityRealm {
         SamlUserDetails userDetails = new SamlUserDetails(username, authorities.toArray(new GrantedAuthority[authorities.size()]));
         // set session expiration, if needed.
 
-        if (getMaximumSessionLifetime() != null) {
+        if (getAdvancedConfiguration() != null && getAdvancedConfiguration().getMaximumSessionLifetime() != null) {
             request.getSession().setAttribute(
                     EXPIRATION_ATTRIBUTE,
-                    System.currentTimeMillis() + 1000 * getMaximumSessionLifetime()
+                    System.currentTimeMillis() + 1000 * getAdvancedConfiguration().getMaximumSessionLifetime()
             );
         }
 
@@ -538,7 +538,7 @@ public class SamlSecurityRealm extends SecurityRealm {
      */
     public SamlPluginConfig getSamlPluginConfig() {
         SamlPluginConfig samlPluginConfig = new SamlPluginConfig(displayNameAttributeName, groupsAttributeName,
-                maximumAuthenticationLifetime, emailAttributeName, idpMetadata, usernameCaseConversion,
+                maximumAuthenticationLifetime, emailAttributeName, idpMetadataConfiguration, usernameCaseConversion,
                 usernameAttributeName, logoutUrl, binding, encryptionData, advancedConfiguration);
         return samlPluginConfig;
     }
@@ -569,14 +569,6 @@ public class SamlSecurityRealm extends SecurityRealm {
                 return FormValidation.error(ERROR_MALFORMED_URL, e);
             }
             return FormValidation.ok();
-        }
-
-        public FormValidation doTestIdpMetadata(@QueryParameter("idpMetadata") String idpMetadata) {
-            if (StringUtils.isBlank(idpMetadata)) {
-                return FormValidation.error(ERROR_IDP_METADATA_EMPTY);
-            }
-
-            return new SamlValidateIdPMetadata(idpMetadata).get();
         }
 
         public FormValidation doCheckDisplayNameAttributeName(@QueryParameter String displayNameAttributeName) {
@@ -627,80 +619,6 @@ public class SamlSecurityRealm extends SecurityRealm {
             return FormValidation.ok();
         }
 
-        public FormValidation doCheckAuthnContextClassRef(@QueryParameter String authnContextClassRef) {
-            if (StringUtils.isEmpty(authnContextClassRef)) {
-                return FormValidation.ok();
-            }
-
-            if (StringUtils.isBlank(authnContextClassRef)) {
-                return FormValidation.error(ERROR_ONLY_SPACES_FIELD_VALUE);
-            }
-
-            return FormValidation.ok();
-        }
-
-
-        public FormValidation doCheckSpEntityId(@QueryParameter String spEntityId) {
-            if (StringUtils.isEmpty(spEntityId)) {
-                return FormValidation.ok();
-            }
-
-            if (StringUtils.isBlank(spEntityId)) {
-                return FormValidation.error(ERROR_ONLY_SPACES_FIELD_VALUE);
-            }
-
-            return FormValidation.ok();
-        }
-
-
-        public FormValidation doCheckKeystorePath(@QueryParameter String keystorePath) {
-            if (StringUtils.isEmpty(keystorePath)) {
-                return FormValidation.ok();
-            }
-
-            if (StringUtils.isBlank(keystorePath)) {
-                return FormValidation.error(ERROR_ONLY_SPACES_FIELD_VALUE);
-            }
-
-            return FormValidation.ok();
-        }
-
-        public FormValidation doCheckKPrivateKeyAlias(@QueryParameter String privateKeyAlias) {
-            if (StringUtils.isEmpty(privateKeyAlias)) {
-                return FormValidation.ok();
-            }
-
-            if (StringUtils.isBlank(privateKeyAlias)) {
-                return FormValidation.error(ERROR_ONLY_SPACES_FIELD_VALUE);
-            }
-
-            return FormValidation.ok();
-        }
-
-
-        public FormValidation doCheckMaximumSessionLifetime(@QueryParameter String maximumSessionLifetime) {
-            if (StringUtils.isEmpty(maximumSessionLifetime)) {
-                return FormValidation.ok();
-            }
-
-            long i = 0;
-            try {
-                i = Long.parseLong(maximumSessionLifetime);
-            } catch (NumberFormatException e) {
-                return FormValidation.error(ERROR_NOT_VALID_NUMBER, e);
-            }
-
-            if (i < 0) {
-                return FormValidation.error(ERROR_NOT_VALID_NUMBER);
-            }
-
-            if (i > Integer.MAX_VALUE) {
-                return FormValidation.error(ERROR_NOT_VALID_NUMBER);
-            }
-
-            return FormValidation.ok();
-        }
-
         public FormValidation doCheckMaximumAuthenticationLifetime(@QueryParameter String maximumAuthenticationLifetime) {
             if (StringUtils.isEmpty(maximumAuthenticationLifetime)) {
                 return FormValidation.ok();
@@ -723,51 +641,6 @@ public class SamlSecurityRealm extends SecurityRealm {
 
             return FormValidation.ok();
         }
-
-        public FormValidation doTestKeyStore(@QueryParameter("keystorePath") String keystorePath,
-                                             @QueryParameter("keystorePassword") Secret keystorePassword,
-                                             @QueryParameter("privateKeyPassword") Secret privateKeyPassword,
-                                             @QueryParameter("privateKeyAlias") String privateKeyAlias) {
-            if(StringUtils.isBlank(keystorePath)){
-                return FormValidation.warning(WARN_THERE_IS_NOT_KEY_STORE);
-            }
-            try (InputStream in = new FileInputStream(keystorePath)) {
-                KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-                ks.load(in, keystorePassword.getPlainText().toCharArray());
-
-                KeyStore.PasswordProtection keyPassword = new KeyStore.PasswordProtection(null);
-                if (StringUtils.isNotBlank(privateKeyPassword.getPlainText())) {
-                    keyPassword = new KeyStore.PasswordProtection(privateKeyPassword.getPlainText().toCharArray());
-                }
-
-                Enumeration<String> aliases = ks.aliases();
-                while (aliases.hasMoreElements()) {
-                    String currentAlias = aliases.nextElement();
-                    if (StringUtils.isBlank(privateKeyAlias) || currentAlias.equalsIgnoreCase(privateKeyAlias)) {
-                        ks.getEntry(currentAlias, keyPassword);
-                        return FormValidation.ok("Success");
-                    }
-                }
-
-            } catch (IOException e) {
-                return FormValidation.error(e, ERROR_NOT_POSSIBLE_TO_READ_KS_FILE);
-            } catch (CertificateException e) {
-                return FormValidation.error(e, ERROR_CERTIFICATES_COULD_NOT_BE_LOADED);
-            } catch (NoSuchAlgorithmException e) {
-                return FormValidation.error(e, ERROR_ALGORITHM_CANNOT_BE_FOUND);
-            } catch (KeyStoreException e) {
-                return FormValidation.error(e, ERROR_NO_PROVIDER_SUPPORTS_A_KS_SPI_IMPL);
-            } catch (java.security.UnrecoverableKeyException e) {
-                return FormValidation.error(e, ERROR_WRONG_INFO_OR_PASSWORD);
-            } catch (UnrecoverableEntryException e) {
-                return FormValidation.error(e, ERROR_INSUFFICIENT_OR_INVALID_INFO);
-            }
-            return FormValidation.error(ERROR_NOT_KEY_FOUND);
-        }
-    }
-
-    public String getIdpMetadata() {
-        return idpMetadata;
     }
 
     public String getUsernameAttributeName() {
@@ -790,45 +663,12 @@ public class SamlSecurityRealm extends SecurityRealm {
         return advancedConfiguration;
     }
 
-    public Boolean getForceAuthn() {
-        return getAdvancedConfiguration() != null ? getAdvancedConfiguration().getForceAuthn() : Boolean.FALSE;
-    }
-
-    public String getAuthnContextClassRef() {
-        return getAdvancedConfiguration() != null ? getAdvancedConfiguration().getAuthnContextClassRef() : null;
-    }
-
-    public String getSpEntityId() {
-        return getAdvancedConfiguration() != null ? getAdvancedConfiguration().getSpEntityId() : null;
-    }
-
-    public Integer getMaximumSessionLifetime() {
-        return getAdvancedConfiguration() != null ? getAdvancedConfiguration().getMaximumSessionLifetime() : null;
-    }
-
     public String getBinding() {
         return binding;
     }
 
     public SamlEncryptionData getEncryptionData() {
         return encryptionData;
-    }
-
-    // TODO this is an antipattern; cf. config.jelly
-    public String getKeystorePath() {
-        return getEncryptionData() != null ? getEncryptionData().getKeystorePath() : null;
-    }
-
-    public Secret getKeystorePassword() {
-        return getEncryptionData() != null ? getEncryptionData().getKeystorePassword() : null;
-    }
-
-    public Secret getPrivateKeyPassword() {
-        return getEncryptionData() != null ? getEncryptionData().getPrivateKeyPassword() : null;
-    }
-
-    public String getPrivateKeyAlias() {
-        return getEncryptionData() != null ? getEncryptionData().getPrivateKeyAlias() : null;
     }
 
     public String getUsernameCaseConversion() {
@@ -841,6 +681,10 @@ public class SamlSecurityRealm extends SecurityRealm {
 
     public String getLogoutUrl() {
         return logoutUrl;
+    }
+
+    public IdpMetadataConfiguration getIdpMetadataConfiguration() {
+        return idpMetadataConfiguration;
     }
 
     @Override
