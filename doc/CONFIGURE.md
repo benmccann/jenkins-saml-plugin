@@ -11,7 +11,7 @@ You'll also need to turn on authorization for the SAML settings to take effect. 
 
 ![](images/Screen_Shot_2017-05-30_at_18.01.09.png)
 
-## Configuring plugin settings ##
+## Configuring plugin settings
 
 * **IdP Metadata** - Identity Provider Metadata in XML format. Usually, identity providers that support SAML expose metadata in XML form by public URL. This metadata should be downloaded and copy-pasted to this field.
 * **Display Name Attribute** - Name of the attribute that carries the display name (optional). If not specified, the username is used.
@@ -40,7 +40,7 @@ __Caution!__ Be aware of case in Authorization strategy as you may lose access r
   
 The attribute is sometimes called a claim, and for some IdPs it has a fixed structure, e.g. a URI. So in some documentation, you might see the term URI of the claim instead of the name of the attribute.
 
-## Configuring groups security ##
+## Configuring groups security
 
 If your IdP provides the group(s) a user belongs to via an attribute of the SAML response, you can use this to configure role-based security with the [Role Strategy Plugin](https://wiki.jenkins-ci.org/display/JENKINS/Role+Strategy+Plugin).
 
@@ -55,28 +55,31 @@ If your IdP provides the group(s) a user belongs to via an attribute of the SAML
 * Once a group is added, you can attach it to one or more roles.
 * Hit save.
 
-## Configuring Identity Provider (IdP) ##
+## Configuring Identity Provider (IdP)
+
 On the IdP side, you need to specify the location in Jenkins which accepts the HTTP POST with the authentication data (SAML response). This is [URL of Jenkins]/securityRealm/finishLogin. This Jenkins URL  it is obtained from "Jenkins URL" field on Configure System, if you use a load balancer or reverse proxy or another kind of redirection in the middle check that the real URL it is configured on Configure System, if not the SAML Response will be not valid.  So for example ***https://jenkins.example.com/securityRealm/finishLogin***.
 
 You also need to specify the **entity ID** (sometimes called **Audience**), by default, this is the same URL, on advanced settings you can configure it.
 
 Not all IdPs use the same terminology, these are the fields for some common IdPs:
 
-### Okta ###
+### Okta
 
 * Postback URL
 * Recipient
 * Audience Restriction
 * Destination
 
-### OneLogin ###
+### OneLogin
+
 These are the fields for the OneLogin SAML Test (IdP) app template. Other app templates might use different names, see [their docs on the SAML connector](https://support.onelogin.com/hc/en-us/articles/202673944-How-to-Use-the-OneLogin-SAML-Test-Connector) for more information.
 
 * SAML Consumer URL
 * SAML Audience
 * SAML Recipient
 
-### Configuring Single Log Out ###
+### Configuring Single Log Out
+
 When using a proxy like Apache, it is possible to catch the logout with a **mod_rewrite** and redirect the browser to the Identity Provider for Single Log Out.
 
 As the standard logout of Jenkins will be bypassed, the JSESSIONID should also be reset.

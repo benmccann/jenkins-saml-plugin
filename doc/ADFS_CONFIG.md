@@ -18,57 +18,33 @@ Open the Management console (mmc), make sure you have the AD FS Management snap-
 
 Go through the wizard. The properties at the end should look like indicated on the following screens.
 
-**Monitoring:** unmodified
+**Monitoring:** unmodified | **Identifiers:** The relying party identifier is: http://jenkins.example.org/securityRealm/finishLogin
+------------ | -------------
+![](images/Screen_Shot_2015-12-10_at_16.11.42.png) | ![](images/Screen_Shot_2015-12-10_at_16.11.44.png)
 
-![](images/Screen_Shot_2015-12-10_at_16.11.42.png)
+**Encryption:** import key from the JENKIS_HOME/saml-sp.metadata.xml file | **Signature:** import key from the JENKIS_HOME/saml-sp.metadata.xml file
+------------ | -------------
+![](images/Screen_Shot_2015-12-10_at_16.11.46.png) | ![](images/Screen_Shot_2015-12-10_at_16.11.49.png)
 
-**Identifiers:** The relying party identifier is: http://jenkins.example.org/securityRealm/finishLogin
+**Accepted Claims:** unmodified | **Organization:** unmodified
+------------ | -------------
+![](images/Screen_Shot_2015-12-10_at_16.11.51.png) | ![](images/Screen_Shot_2015-12-10_at_16.11.55.png)
 
-![](images/Screen_Shot_2015-12-10_at_16.11.44.png)
+**Endpoints:** URL is http://jenkins.example.org/securityRealm/finishLogin, binding POST | **Proxy Endpoints:** unmodified
+------------ | -------------
+![](images/Screen_Shot_2015-12-10_at_16.11.57.png) | ![](images/Screen_Shot_2015-12-10_at_16.12.00.png)
 
-**Encryption:** import key from the JENKIS_HOME/saml-sp.metadata.xml file
+**Notes:** unmodfied | **Advanced:** SHA-256
+------------ | -------------
+![](images/Screen_Shot_2015-12-10_at_16.12.02.png) | ![](images/Screen_Shot_2015-12-10_at_16.12.05.png)
 
-![](images/Screen_Shot_2015-12-10_at_16.11.46.png)
+Select the Relying Party Trust and click on Edit Claim Rules.... You should expose the following LDAP attributes:| 
+------------ | -------------
+![](images/Screen_Shot_2015-12-10_at_16.12.23.png) | ![](images/Screen_Shot_2015-12-10_at_16.12.27.png)
 
-**Signature:** import key from the JENKIS_HOME/saml-sp.metadata.xml file
-
-![](images/Screen_Shot_2015-12-10_at_16.11.49.png)
-
-**Accepted Claims:** unmodified
-
-![](images/Screen_Shot_2015-12-10_at_16.11.51.png)
-
-**Organization:** unmodified
-
-![](images/Screen_Shot_2015-12-10_at_16.11.55.png)
-
-**Endpoints:** URL is http://jenkins.example.org/securityRealm/finishLogin, binding POST	
-
-![](images/Screen_Shot_2015-12-10_at_16.11.57.png)
-
-**Proxy Endpoints:** unmodified
-
-![](images/Screen_Shot_2015-12-10_at_16.12.00.png)
-
-**Notes:** unmodfied
-
-![](images/Screen_Shot_2015-12-10_at_16.12.02.png)
-
-**Advanced:** SHA-256
-
-![](images/Screen_Shot_2015-12-10_at_16.12.05.png)
-
-Select the Relying Party Trust and click on Edit Claim Rules.... You should expose the following LDAP attributes:	 
-
-![](images/Screen_Shot_2015-12-10_at_16.12.23.png)
-
-![](images/Screen_Shot_2015-12-10_at_16.12.27.png)
-
-Allow all users to connect, or modify depending on your setup:
-
-![](images/Screen_Shot_2015-12-10_at_16.12.36.png)
-
-![](images/Screen_Shot_2015-12-10_at_16.12.40.png)
+Allow all users to connect, or modify depending on your setup:| 
+------------ | -------------
+![](images/Screen_Shot_2015-12-10_at_16.12.36.png) | ![](images/Screen_Shot_2015-12-10_at_16.12.40.png)
 
 **Delegation Authorization Rules:** unmodified	 
 
