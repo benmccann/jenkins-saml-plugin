@@ -5,7 +5,7 @@ A SAML 2.0 Plugin for the Jenkins Continuous Integration server
 
 Usage
 -------------------
-See the [SAML Plugin page on the Jenkins wiki](https://wiki.jenkins-ci.org/display/JENKINS/SAML+Plugin)
+See the [SAML Plugin page on the Jenkins.io](https://plugins.jenkins.io/saml)
 
 Local development
 -------------------
@@ -32,7 +32,12 @@ Changelog
 -------------------
 [Changelog](CHANGELOG.md)
 
+Configure
+-------------------
+[Overall Configurarion](doc/CONFIGURE.md)
+[ADFS Example](doc/ADFS_CONFIG.md)
+
 Troubleshooting
 -------------------
-[Troubleshooting](TROUBLESHOOTING.md)
+[Troubleshooting](doc/TROUBLESHOOTING.md)
 
