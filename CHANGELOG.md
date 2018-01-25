@@ -1,5 +1,14 @@
 Changelog
 -------------------
+* 1.0.5 (Jan 25, 2018)
+  * [JENKINS-45857](https://issues.jenkins-ci.org/browse/JENKINS-45857) Support to set the Binding type (Redirection/Post)
+  * [JENKINS-47850](https://issues.jenkins-ci.org/browse/JENKINS-47850) log SAMLResponse on encoding errors
+  * [JENKINS-41907](https://issues.jenkins-ci.org/browse/JENKINS-41907) Evaluate to obtain IdP Metadata from URL
+  * [JENKINS-48031](https://issues.jenkins-ci.org/browse/JENKINS-48031) SAML plugin does not accept xml tag in Idp metadata (azure)
+  * [JENKINS-48030](https://issues.jenkins-ci.org/browse/JENKINS-48030) SAML Azure AD exception
+  * [JENKINS-47880](https://issues.jenkins-ci.org/browse/JENKINS-47880) Navigating to /securityRealm/finishLogin manually shows an odd error
+  * [JENKINS-46063](https://issues.jenkins-ci.org/browse/JENKINS-46063) do not allow blank passwords
+  * [JENKINS-44992](https://issues.jenkins-ci.org/browse/JENKINS-44992) SamlException after metadata update
 * 1.0.4 (Sep 19, 2017)
   * [JENKINS-46949](https://issues.jenkins-ci.org/browse/JENKINS-46949) Downgrade bouncycastle-api to 2.16.1
 * 1.0.3 (Aug 8, 2017)
