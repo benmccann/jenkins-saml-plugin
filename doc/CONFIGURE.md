@@ -11,7 +11,7 @@ You'll also need to turn on authorization for the SAML settings to take effect. 
 
 ![](images/Screen_Shot_2017-05-30_at_18.01.09.png)
 
-## Configuring plugin settings
+## Configuring plugin settings
 
 * **IdP Metadata** - Identity Provider Metadata in XML format. Usually, identity providers that support SAML expose metadata in XML form by public URL. This metadata should be downloaded and copy-pasted to this field.
 * **Display Name Attribute** - Name of the attribute that carries the display name (optional). If not specified, the username is used.
@@ -55,7 +55,7 @@ If your IdP provides the group(s) a user belongs to via an attribute of the SAML
 * Once a group is added, you can attach it to one or more roles.
 * Hit save.
 
-## Configuring Identity Provider (IdP)
+## Configuring Identity Provider (IdP)
 
 On the IdP side, you need to specify the location in Jenkins which accepts the HTTP POST with the authentication data (SAML response). This is [URL of Jenkins]/securityRealm/finishLogin. This Jenkins URL  it is obtained from "Jenkins URL" field on Configure System, if you use a load balancer or reverse proxy or another kind of redirection in the middle check that the real URL it is configured on Configure System, if not the SAML Response will be not valid.  So for example ***https://jenkins.example.com/securityRealm/finishLogin***.
 
@@ -78,7 +78,7 @@ These are the fields for the OneLogin SAML Test (IdP) app template. Other app te
 * SAML Audience
 * SAML Recipient
 
-### Configuring Single Log Out
+### Configuring Single Log Out
 
 When using a proxy like Apache, it is possible to catch the logout with a **mod_rewrite** and redirect the browser to the Identity Provider for Single Log Out.
 

@@ -38,11 +38,11 @@ Go through the wizard. The properties at the end should look like indicated on t
 ------------ | -------------
 ![](images/Screen_Shot_2015-12-10_at_16.12.02.png) | ![](images/Screen_Shot_2015-12-10_at_16.12.05.png)
 
-Select the Relying Party Trust and click on Edit Claim Rules.... You should expose the following LDAP attributes:| 
+Select the Relying Party Trust and click on Edit Claim Rules.... You should expose the following LDAP attributes: | -
 ------------ | -------------
 ![](images/Screen_Shot_2015-12-10_at_16.12.23.png) | ![](images/Screen_Shot_2015-12-10_at_16.12.27.png)
 
-Allow all users to connect, or modify depending on your setup:| 
+Allow all users to connect, or modify depending on your setup: | -
 ------------ | -------------
 ![](images/Screen_Shot_2015-12-10_at_16.12.36.png) | ![](images/Screen_Shot_2015-12-10_at_16.12.40.png)
 

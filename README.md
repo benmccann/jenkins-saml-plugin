@@ -35,6 +35,7 @@ Changelog
 Configure
 -------------------
 [Overall Configurarion](doc/CONFIGURE.md)
+
 [ADFS Example](doc/ADFS_CONFIG.md)
 
 Troubleshooting
