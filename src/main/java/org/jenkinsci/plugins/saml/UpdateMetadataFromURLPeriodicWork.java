@@ -3,6 +3,7 @@ package org.jenkinsci.plugins.saml;
 import hudson.Extension;
 import hudson.model.AsyncAperiodicWork;
 import jenkins.model.Jenkins;
+import org.apache.commons.lang.StringUtils;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -51,7 +52,7 @@ public class UpdateMetadataFromURLPeriodicWork extends AsyncAperiodicWork {
         if (j.getSecurityRealm() instanceof SamlSecurityRealm) {
             SamlSecurityRealm samlSecurityRealm = (SamlSecurityRealm) j.getSecurityRealm();
             IdpMetadataConfiguration config = samlSecurityRealm.getIdpMetadataConfiguration();
-            if(config != null && config.getPeriod() != null) {
+            if(config != null && config.getPeriod() != null && StringUtils.isNotBlank(config.getUrl())) {
                 ret = TimeUnit.MINUTES.toMillis(config.getPeriod());
             }
         }

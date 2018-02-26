@@ -61,7 +61,11 @@ public class IdpMetadataConfiguration extends AbstractDescribableImpl<IdpMetadat
     public IdpMetadataConfiguration(String xml, String url, Long period) {
         this.xml = xml;
         this.url = url;
-        this.period = period;
+        if(StringUtils.isBlank(url) || period == null){
+            this.period = 0L;
+        } else {
+            this.period = period;
+        }
     }
 
     /**
