@@ -78,7 +78,8 @@ public class BundleKeyStore {
         try {
 
             if (keystore == null) {
-                keystore = File.createTempFile("saml-jenkins-keystore-", ".jks");
+                String jenkinsHome = jenkins.model.Jenkins.getInstance().getRootDir().getPath();
+                keystore = java.nio.file.Paths.get(jenkinsHome, "saml-jenkins-keystore.jks").toFile();
                 keystorePath = "file:" + keystore.getPath();
             }
 
