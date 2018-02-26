@@ -97,3 +97,63 @@ Caused by: java.lang.IllegalArgumentException: Illegal base64 character d
     at org.jenkinsci.plugins.saml.SamlSecurityRealm.doFinishLogin(SamlSecurityRealm.java:258)
 ```
 
+** The SAMLResponse is not correct bsae64 encode **
+
+The SAMLResponse message is not valid because the `SAMLResponse` value is not in Base64 format or it is corrupted.
+
+```
+Caused by: java.lang.IllegalStateException: org.pac4j.saml.exceptions.SAMLException: Error decoding saml message
+	at org.jenkinsci.plugins.saml.SamlProfileWrapper.process(SamlProfileWrapper.java:68)
+	at org.jenkinsci.plugins.saml.SamlProfileWrapper.process(SamlProfileWrapper.java:39)
+	at org.jenkinsci.plugins.saml.OpenSAMLWrapper.get(OpenSAMLWrapper.java:65)
+	at org.jenkinsci.plugins.saml.SamlSecurityRealm.doFinishLogin(SamlSecurityRealm.java:272)
+	at java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:627)
+	at org.kohsuke.stapler.Function$MethodFunction.invoke(Function.java:343)
+	... 77 more
+```
+
+** There is no SAMLResponse parameter in the POST message **
+
+The response message should have a parameter named `SAMLResponse` that should be the XML of the SAMLResponse in Base64 format.
+
+```
+Caused by: org.opensaml.messaging.decoder.MessageDecodingException: Request did not contain either a SAMLRequest or SAMLResponse parameter. Invalid request for SAML 2 HTTP POST binding.
+	at org.pac4j.saml.transport.Pac4jHTTPPostDecoder.getBase64DecodedMessage(Pac4jHTTPPostDecoder.java:80)
+	at org.pac4j.saml.transport.Pac4jHTTPPostDecoder.doDecode(Pac4jHTTPPostDecoder.java:62)
+	at org.opensaml.messaging.decoder.AbstractMessageDecoder.decode(AbstractMessageDecoder.java:58)
+	at org.pac4j.saml.sso.impl.SAML2WebSSOMessageReceiver.receiveMessage(SAML2WebSSOMessageReceiver.java:40)
+	... 87 more
+```
+
+** No valid subject assertion found in response **
+
+Check that the `SP Entry ID` it is the same in the SP (Jenkins) and IdP, by defaulr Jenkins uses `JENKINS_URL/securityRealm/finishLogin` you can change this value if you use the SAML Plugin's Advanced Setting named "SP Entity ID".
+
+```
+org.pac4j.saml.exceptions.SAMLException: No valid subject assertion found in response 
+at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validateSamlSSOResponse(SAML2DefaultResponseValidator.java:313) 
+at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validate(SAML2DefaultResponseValidator.java:138) 
+at org.pac4j.saml.sso.impl.SAML2WebSSOMessageReceiver.receiveMessage(SAML2WebSSOMessageReceiver.java:77) 
+at org.pac4j.saml.sso.impl.SAML2WebSSOProfileHandler.receive(SAML2WebSSOProfileHandler.java:35) 
+at org.pac4j.saml.client.SAML2Client.retrieveCredentials(SAML2Client.java:225) 
+at org.pac4j.saml.client.SAML2Client.retrieveCredentials(SAML2Client.java:60) 
+at org.pac4j.core.client.IndirectClient.getCredentials(IndirectClient.java:106) 
+at org.jenkinsci.plugins.saml.SamlProfileWrapper.process(SamlProfileWrapper.java:53) 
+at org.jenkinsci.plugins.saml.SamlProfileWrapper.process(SamlProfileWrapper.java:33) 
+at org.jenkinsci.plugins.saml.OpenSAMLWrapper.get(OpenSAMLWrapper.java:65) 
+at org.jenkinsci.plugins.saml.SamlSecurityRealm.doFinishLogin(SamlSecurityRealm.java:265) 
+at java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:627) 
+at org.kohsuke.stapler.Function$MethodFunction.invoke(Function.java:343) 
+at org.kohsuke.stapler.Function.bindAndInvoke(Function.java:184) 
+at org.kohsuke.stapler.Function.bindAndInvokeAndServeResponse(Function.java:117) 
+at org.kohsuke.stapler.MetaClass$1.doDispatch(MetaClass.java:129) 
+at org.kohsuke.stapler.NameBasedDispatcher.dispatch(NameBasedDispatcher.java:58) 
+at org.kohsuke.stapler.Stapler.tryInvoke(Stapler.java:715) 
+Caused: javax.servlet.ServletException at org.kohsuke.stapler.Stapler.tryInvoke(Stapler.java:765) 
+
+...
+at winstone.BoundedExecutorService$1.run(BoundedExecutorService.java:77) 
+at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) 
+at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) 
+at java.lang.Thread.run(Thread.java:748)
+```
