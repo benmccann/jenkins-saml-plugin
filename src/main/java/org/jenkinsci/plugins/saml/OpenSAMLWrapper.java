@@ -100,21 +100,22 @@ public abstract class OpenSAMLWrapper<T> {
         if (samlPluginConfig.getEncryptionData() != null) {
             config.setWantsAssertionsSigned(true);
             config.setKeystorePath(samlPluginConfig.getEncryptionData().getKeystorePath());
-            // TODO does this really accept blanks? its constructor seems to imply it does not
             config.setKeystorePassword(samlPluginConfig.getEncryptionData().getKeystorePasswordPlainText());
             config.setPrivateKeyPassword(samlPluginConfig.getEncryptionData().getPrivateKeyPasswordPlainText());
             config.setKeystoreAlias(samlPluginConfig.getEncryptionData().getPrivateKeyAlias());
+            config.setForceSignRedirectBindingAuthnRequest(samlPluginConfig.getEncryptionData().isForceSignRedirectBindingAuthnRequest());
         } else {
             if (!KS.isValid()) {
                 KS.init();
             }
             if (KS.isUsingDemoKeyStore()) {
-                LOG.warning("Using bundled keystore is INSECURE: " + KS.getKeystorePath());
+                LOG.warning("Using bundled keystore : " + KS.getKeystorePath());
             }
             config.setKeystorePath(KS.getKeystorePath());
             config.setKeystorePassword(KS.getKsPassword());
             config.setPrivateKeyPassword(KS.getKsPkPassword());
             config.setKeystoreAlias(KS.getKsPkAlias());
+            config.setForceSignRedirectBindingAuthnRequest(false);
         }
 
         config.setMaximumAuthenticationLifetime(samlPluginConfig.getMaximumAuthenticationLifetime());

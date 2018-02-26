@@ -146,6 +146,7 @@ public class SamlSecurityRealmTest {
         assertEquals(Secret.fromString("changeitks"), samlSecurityRealm.getEncryptionData().getKeystorePassword());
         assertEquals(Secret.fromString("changeitpk"), samlSecurityRealm.getEncryptionData().getPrivateKeyPassword());
         assertThat(new XmlFile(new File(jenkinsRule.jenkins.root, "config.xml")).asString(), not(containsString("changeit")));
+        assertEquals(false, samlSecurityRealm.getEncryptionData().isForceSignRedirectBindingAuthnRequest());
     }
 
     @LocalData
@@ -215,8 +216,8 @@ public class SamlSecurityRealmTest {
         token = new SamlAuthenticationToken(userDetails,mockHttpsession);
         assertEquals(token.getPrincipal().equals(userDetails),true);
 
-        assertThat(new SamlEncryptionData(null,null,null, null).toString(), containsString("SamlEncryptionData"));
-        assertThat(new SamlEncryptionData("", Secret.fromString(""), Secret.fromString(""), "").toString(), containsString("SamlEncryptionData"));
+        assertThat(new SamlEncryptionData(null,null,null, null, false).toString(), containsString("SamlEncryptionData"));
+        assertThat(new SamlEncryptionData("", Secret.fromString(""), Secret.fromString(""), "", false).toString(), containsString("SamlEncryptionData"));
 
         assertEquals(new SamlFileResource("fileNotExists").exists(),false);
         SamlFileResource file = new SamlFileResource("fileWillExists","data");

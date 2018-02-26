@@ -57,13 +57,16 @@ public class SamlEncryptionData extends AbstractDescribableImpl<SamlEncryptionDa
     private transient String privateKeyPassword;
     private Secret privateKeyPasswordSecret;
     private final String privateKeyAlias;
+    private boolean forceSignRedirectBindingAuthnRequest;
 
     @DataBoundConstructor
-    public SamlEncryptionData(String keystorePath, Secret keystorePassword, Secret privateKeyPassword, String privateKeyAlias) {
+    public SamlEncryptionData(String keystorePath, Secret keystorePassword, Secret privateKeyPassword, String privateKeyAlias,
+                              boolean forceSignRedirectBindingAuthnRequest) {
         this.keystorePath = Util.fixEmptyAndTrim(keystorePath);
         this.keystorePasswordSecret = keystorePassword != null ? keystorePassword : Secret.fromString("");
         this.privateKeyPasswordSecret = privateKeyPassword != null ? privateKeyPassword : Secret.fromString("");
         this.privateKeyAlias = Util.fixEmptyAndTrim(privateKeyAlias);
+        this.forceSignRedirectBindingAuthnRequest = forceSignRedirectBindingAuthnRequest;
     }
 
     public String getKeystorePath() {
@@ -90,6 +93,10 @@ public class SamlEncryptionData extends AbstractDescribableImpl<SamlEncryptionDa
         return privateKeyAlias;
     }
 
+    public boolean isForceSignRedirectBindingAuthnRequest() {
+        return forceSignRedirectBindingAuthnRequest;
+    }
+
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer("SamlEncryptionData{");
@@ -97,6 +104,7 @@ public class SamlEncryptionData extends AbstractDescribableImpl<SamlEncryptionDa
         sb.append(", keystorePassword is NOT empty='").append(getKeystorePasswordPlainText() != null).append('\'');
         sb.append(", privateKeyPassword is NOT empty='").append(getPrivateKeyPasswordPlainText() != null).append('\'');
         sb.append(", privateKeyAlias is NOT empty='").append(StringUtils.isNotEmpty(privateKeyAlias)).append('\'');
+        sb.append(", forceSignRedirectBindingAuthnRequest = ").append(forceSignRedirectBindingAuthnRequest);
         sb.append('}');
         return sb.toString();
     }

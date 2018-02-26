@@ -25,6 +25,9 @@ __Caution!__ Be aware of case in Authorization strategy as you may lose access r
   * None - will not change return value (default)
   * Lowercase - convert to lowercase
   * Uppercase - convert to uppercase
+* **Data Binding Method** - SAML Plugin supports two method of redirection binding HTTP-Redirect and HTTP-POST, by default HTTP-Redirect is used. Check supported binding redirection types of your IdP.
+  * urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect
+  * urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST
 * **Logout URL** - The url of your Identity Provider where you want to be redirected once logout.
 * **Advanced Configuration** - You could enable this options to use SAML ForceAuthn to force logins at our IdP, AuthnContextClassRef to override the default authentication mechanism, and force multi-factor authentication; you also could set the sessions on Jenkins to be shorter than those on your IdP.
   * **Force Authentication** - Whether to request the SAML IdP to force (re)authentication of the user, rather than allowing an existing session with the IdP to be reused. Off by default
@@ -37,6 +40,7 @@ __Caution!__ Be aware of case in Authorization strategy as you may lose access r
   * **Key Alias** - The alias used in the -alias argument of the keytool< command.
   * **Keystore password** - The password used in the -storepass argument of the keytool command.
   * **Private Key password** - The password used in the -keypass argument of keytool.
+  * **Disable Signature Redirect Binding Auth Request** - Disable signature of the Redirect Binding Auth Request (urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect), It is not possible to disable the signature in HTTP-POST binding.
   
 The attribute is sometimes called a claim, and for some IdPs it has a fixed structure, e.g. a URI. So in some documentation, you might see the term URI of the claim instead of the name of the attribute.
 
