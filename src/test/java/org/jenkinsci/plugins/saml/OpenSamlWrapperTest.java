@@ -54,7 +54,8 @@ public class OpenSamlWrapperTest {
         SamlSecurityRealm samlSecurity = new SamlSecurityRealm(new IdpMetadataConfiguration(metadata),
                 "displayName", "groups", 10000,
                 "uid", "email", "/logout", null,
-                null, "none",SAML2_REDIRECT_BINDING_URI);
+                null, "none",SAML2_REDIRECT_BINDING_URI,
+                java.util.Collections.emptyList());
         jenkinsRule.jenkins.setSecurityRealm(samlSecurity);
         SamlSPMetadataWrapper samlSPMetadataWrapper = new SamlSPMetadataWrapper(samlSecurity.getSamlPluginConfig(), null, null);
         HttpResponse process = samlSPMetadataWrapper.get();
@@ -78,7 +79,8 @@ public class OpenSamlWrapperTest {
         SamlSecurityRealm samlSecurity = new SamlSecurityRealm(new IdpMetadataConfiguration(metadata),
                 "displayName", "groups", 10000,
                 "uid", "email", "/logout", null,
-                null, "none", SAML2_REDIRECT_BINDING_URI);
+                null, "none", SAML2_REDIRECT_BINDING_URI,
+                java.util.Collections.emptyList());
         jenkinsRule.jenkins.setSecurityRealm(samlSecurity);
 
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
