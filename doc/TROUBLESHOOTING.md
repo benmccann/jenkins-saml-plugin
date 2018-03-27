@@ -4,6 +4,118 @@ When you face an issue you could try to enable a logger to these two packages on
 
     * org.jenkinsci.plugins.saml - FINEST
     * org.pac4j - FINE
+    
+**IdP Metadata**
+
+The IdP metadata should looks like this one, the main data are the `entityID`, `IDPSSODescriptor` section, and `SingleSignOnService` the three sections are needed.
+
+```
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<EntityDescriptor xmlns:xsi="https://www.w3.org/2001/XMLSchema-instance"
+    xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+    entityID="https://SAML_SERVER/idp/">
+    <!-- The SSO service at the identity provider -->
+    <IDPSSODescriptor WantAuthnRequestsSigned="false"
+        protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <KeyDescriptor use="signing">
+            <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <ds:X509Data>
+                    <ds:X509Certificate>sEqZ5xC8GFgcPcUOI6CnUYDnO630cAqHjLdVp82eaxFRr7F8j75Go7b/HiWcp87iOAzQ8NrCWUwYzny7mogvopNq2/oONqNXML4pM6v8epHWAZePBcW+o5tVJMYseAl7bwX/VE3Ro8LakHoBbDlRaiHT3A55p4Vyp0OZUGHLazrV9yCKvvDPU+pPocB4PKR3nBOQ9AyF0r1a8T8/y90X59BpHJxhXfJSgT8U/95KIV9+cEb11BApr5a3KrxIZAep6CC4C9MVmIsUSjpM6bOt4qqiQC9WVbD5i5ZnimiFYvHt/QOvyFT751T9QylWz2SGwzyqwG6+LZXswbeITjcrSZkdInkkWybqC+igvOrSOi6sSn5GjSHQqskCI6GwYNQ9ndAsWBwRdyx+ydZGVo0riZurc/YdhH13VpLnx6Vrk8+Sbf0oHqr7BSdSnl1bi/qptIg9ksF5Zw8Rkep9118A88w7uEEBO3q+fGfE72FYMxsp5k/MSLgKkwqlCpqzhmCd2L6ZU/g45sEQSwdaS9YzsY7o4kGrzSzCGxsinP/67UddiTFiJNan2zzVyeVUdKthbek5hHNord9durQXN8O4t5wlMFS+67+ReCs1g/S+eKJelvH5aPtbPE7lttt/hZ8LgKX2vGT5yFcQmT46Kj6u3tSbNGnipl4BQ1ItbQZoe1g=
+                    </ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </KeyDescriptor>
+    <!-- Supported Name Identifier Formats -->
+    <NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
+    <!-- AuthenticationRequest Consumer endpoint -->
+    <SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://SAML_SERVER/idp"/>
+    <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://SAML_SERVER/idp"/>
+</IDPSSODescriptor>
+</EntityDescriptor>
+```
+
+**SAMLResponse**
+
+This is an example of SAMLResponse, it is the message sent by the IdP to Jenkins, it should contains an `Assertion` with signature details if it is supported by the IdP, a `Subject` with the request details, `Conditions` with the validity of the session, `AuthnStatement` with the session details, finally a `AttributeStatement` with the attributes sent by the IdP.
+
+```
+<Response
+    xmlns="urn:oasis:names:tc:SAML:2.0:protocol"
+    Destination="https://JENKINS_SERVER/securityRealm/finishLogin"
+    ID="_c266abbff66bba8bcd763443655ea1c5861d"
+    InResponseTo="_75a5cb8c9514c22751e05b29e698e0e8"
+    IssueInstant="2016-04-18T19:04:53Z"
+    Version="2.0">
+    <ns1:Issuer xmlns:ns1="urn:oasis:names:tc:SAML:2.0:assertion"
+        Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">https://SAML_SERVER/idp/</ns1:Issuer>
+    <Status>
+        <StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+    </Status>
+    <ns2:Assertion xmlns:ns2="urn:oasis:names:tc:SAML:2.0:assertion" ID="_4d406d6505202232c48a50726c55d58f548c"            
+        IssueInstant="2016-04-18T19:04:53Z" Version="2.0">
+        <ns2:Issuer Format="urn:oasis:names:tc:SAML:2.0:nameid-format:entity">https://SAML_SERVER/idp/</ns2:Issuer>
+        <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+            <ds:SignedInfo>
+                <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+                <ds:Reference URI="#_4d406d6505202232c48a50726c55d58f548c">
+                    <ds:Transforms>
+                        <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                        <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                    </ds:Transforms>
+                    <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                    <ds:DigestValue>B+nZTeDSNSpigeyDg2475274242ARIw6ttEXHY3PMk=</ds:DigestValue>
+                </ds:Reference>
+            </ds:SignedInfo>
+            <ds:SignatureValue>VTCuyYj09/CbuU7+pX6g3wjTlocTH83RkWEG6xy2t1ZSDPS0Q0gjfmh8/HMNSOoold9i2zY5Qi4/idZ7yKBe0nR7WDZDPkc3FSovvX73FThJEZ5aJk/6uhr5yUzj3qypA9bLsHdMO75SfaDzotb0c4mIBWLuPX245sZretx6pNRHDYntgQB9ikYC6UQPuSwn1+p/iq1B+GnbNp7m+og0rL5ooc7jPnpqiWBn2648ZCSsnoemrCiSmDVR90XJ7GFEz27W7BH8ZH49DdML6xmqiBvWmZC7LpfkcoF54mLZMdVYM=
+            </ds:SignatureValue>
+            <ds:KeyInfo>
+                <ds:X509Data>
+                    <ds:X509Certificate>gpEQ4+mCQGMhwPtrqp1fPXpocgNZ9NkH/FZ62bzYTswVBF6VJPm5VuslmxGTVOMBd/qNKin/xlX2nL5J4mABXZ3OrUcyX//cwK3zqyS2Gn9LaAQnwOdkpXVQzeufCS0agrpfOtEKwWHgbs1m4Dfcl82SWOSbBZhLOUmtDMa0y1DqMB2nxVwJY8ULD+p3HUJGnGxx7JvGBo3OM/tZ3DC7zC0QGlPfuMFPT1GuKsdG11OZ1kWNa9XxQj8pOpPDuiBrxCJDz5vM00ThgnkORITYSkWPO05oe+RBms/qcfYH5JOiR5NJMxojAv2jqvAT8YES1l376yaHWEampzH1nWdW9XQvpr9l297yK7GxGU3Pj4M7ryalYXyH/5tqGFkcQQsX6TDUcmy4M6DlRTe3f7U3duEA1KlQApShDU7lYt41g8vv7pVFN14z9ZNhztJIErmkvR0H/QHR2SVg+WWM0Ql+rMzgsYVfPa4xCIpfEmiWujeeboJay+492k3Im5XbUUCG49UHigyoaAbLIwrCpnFLd3bGlAjun75WWbAHlaILkXAhTNMSPpbWBXrfhwgLwYK5zLGgkpsQPKzzAvQoLHT0wP0R1CbHWGmyNE45ArY3QK0BFb0IRxysNjYIu276JkDjxpdK93ofnWImwE9NLxWh/rqJ2IJ/+6dl8tnYVoT1adg=
+                    </ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </ds:Signature>
+        <!-- User information -->
+        <ns2:Subject>
+            <ns2:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">USER_NAME</ns2:NameID>
+            <ns2:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+            <ns2:SubjectConfirmationData InResponseTo="_75a5cb8c9514c22751e05b29e698e0e8" NotOnOrAfter="2016-04-18T19:06:23Z"   
+                Recipient="https://JENKINS_SERVER/securityRealm/finishLogin"/>
+            </ns2:SubjectConfirmation>
+        </ns2:Subject>
+        <!-- expiration of session -->
+        <ns2:Conditions NotBefore="2016-04-18T19:04:23Z" NotOnOrAfter="2016-04-18T19:06:23Z">
+            <ns2:AudienceRestriction>
+                <ns2:Audience>https://JENKINS_SERVER/securityRealm/finishLogin</ns2:Audience>
+            </ns2:AudienceRestriction>
+        </ns2:Conditions>
+        <ns2:AuthnStatement AuthnInstant="2016-04-18T19:04:53Z" SessionIndex="/47O5ynZIyr+2365762LqnEmAZs=JI+mPg=="
+            SessionNotOnOrAfter="2016-04-18T19:06:23Z">
+            <ns2:AuthnContext>
+                <ns2:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</ns2:AuthnContextClassRef>
+                </ns2:AuthnContext>
+        </ns2:AuthnStatement>
+        <!-- Authorization Groups -->
+        <ns2:AttributeStatement>
+            <ns2:Attribute name="groups">
+                <ns2:AttributeValue>groupOne</ns2:AttributeValue>
+                <ns2:AttributeValue>groupTwo</ns2:AttributeValue>
+                <ns2:AttributeValue>groupThree</ns2:AttributeValue>                       
+            </ns2:Attribute>
+        </ns2:AttributeStatement>
+    </ns2:Assertion>
+</Response>
+```
+
+**SAMLException: Identity provider has no single sign on service available for the selected**
+
+You have to check your IdP metadata contains the section `SingleSignOnService`
+
+```
+org.pac4j.saml.exceptions.SAMLException: Identity provider has no single sign on service available for the selected profileorg.opensaml.saml.saml2.metadata.impl.IDPSSODescriptorImpl@628767f5
+	at org.pac4j.saml.context.SAML2MessageContext.getIDPSingleSignOnService(SAML2MessageContext.java:93)
+```
 
 **Azure AD**
 
