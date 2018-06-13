@@ -1,21 +1,5 @@
 package org.jenkinsci.plugins.saml;
 
-import org.apache.commons.lang.math.NumberUtils;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.cert.CertIOException;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.bouncycastle.asn1.x500.X500Name;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -31,6 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.SignatureException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
@@ -38,6 +23,25 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import org.apache.commons.lang.math.NumberUtils;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.cert.CertIOException;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import hudson.XmlFile;
+import hudson.util.Secret;
+import jenkins.model.Jenkins;
+import static java.util.logging.Level.WARNING;
 
 /**
  * Pac4j requires to set a keystore for encryption operations,
@@ -59,15 +63,30 @@ public class BundleKeyStore {
     public static final Long KEY_VALIDITY = 365L;
 
     private static final Logger LOG = Logger.getLogger(BundleKeyStore.class.getName());
+    public static final String SAML_JENKINS_KEYSTORE_XML = "saml-jenkins-keystore.xml";
+    public static final String SAML_JENKINS_KEYSTORE_JKS = "saml-jenkins-keystore.jks";
 
     private String keystorePath = PAC4J_DEMO_KEYSTORE;
-    private String ksPassword = PAC4J_DEMO_PASSWD;
-    private String ksPkPassword = PAC4J_DEMO_PASSWD;
+    private Secret ksPassword =  Secret.fromString(PAC4J_DEMO_PASSWD);
+    private Secret ksPkPassword =  Secret.fromString(PAC4J_DEMO_PASSWD);
     private String ksPkAlias = PAC4J_DEMO_ALIAS;
     private Date dateValidity;
     private File keystore;
+    private transient XmlFile config = null;
 
-    public BundleKeyStore() {
+    public BundleKeyStore(){
+        Jenkins jenkins = Jenkins.getInstance();
+        File jdir = jenkins.getRootDir();
+        File configFile = new File(jdir, SAML_JENKINS_KEYSTORE_XML);
+        config = new XmlFile(configFile);
+        try {
+            if (config.exists()) {
+                config.unmarshal(this);
+            }
+        } catch (IOException e) {
+            LOG.log(WARNING, "It is not possible to write the configuration file "
+                             + config.getFile().getAbsolutePath(), e);
+        }
     }
 
     /**
@@ -76,28 +95,33 @@ public class BundleKeyStore {
      */
     public synchronized void init() {
         try {
-
-            if (keystore == null) {
+            if (keystore == null || !keystoreFileExists()) {
                 String jenkinsHome = jenkins.model.Jenkins.getInstance().getRootDir().getPath();
-                keystore = java.nio.file.Paths.get(jenkinsHome, "saml-jenkins-keystore.jks").toFile();
+                keystore = java.nio.file.Paths.get(jenkinsHome, SAML_JENKINS_KEYSTORE_JKS).toFile();
                 keystorePath = "file:" + keystore.getPath();
             }
 
-            if (PAC4J_DEMO_KEYSTORE.equals(ksPassword)) {
-                ksPassword = generatePassword();
-                ksPkPassword = generatePassword();
+            if (PAC4J_DEMO_KEYSTORE.equals(ksPassword.getPlainText())) {
+                ksPassword = Secret.fromString(generatePassword());
+                ksPkPassword = Secret.fromString(generatePassword());
             }
             ksPkAlias = DEFAULT_KEY_ALIAS;
-            KeyStore ks = loadKeyStore(keystore, ksPassword);
+            KeyStore ks = loadKeyStore(keystore, ksPassword.getPlainText());
             KeyPair keypair = generate(2048);
             X509Certificate[] chain = createCertificateChain(keypair);
-            ks.setKeyEntry(ksPkAlias, keypair.getPrivate(), ksPkPassword.toCharArray(), chain);
-            saveKeyStore(keystore, ks, ksPassword);
+            ks.setKeyEntry(ksPkAlias, keypair.getPrivate(), ksPkPassword.getPlainText().toCharArray(), chain);
+            saveKeyStore(keystore, ks, ksPassword.getPlainText());
             LOG.warning("Using automatic generated keystore : " + keystorePath);
+            try {
+                config.write(this);
+            } catch (IOException e) {
+                LOG.log(WARNING, "It is not possible to write the configuration file "
+                                 + config.getFile().getAbsolutePath(), e);
+            }
         } catch (Exception e) {
             LOG.warning("Using bundled keystore : " + e.getMessage());
-            ksPassword = PAC4J_DEMO_PASSWD;
-            ksPkPassword = PAC4J_DEMO_PASSWD;
+            ksPassword = Secret.fromString(PAC4J_DEMO_PASSWD);
+            ksPkPassword =  Secret.fromString(PAC4J_DEMO_PASSWD);
             keystorePath = PAC4J_DEMO_KEYSTORE;
             ksPkAlias = PAC4J_DEMO_ALIAS;
         }
@@ -263,11 +287,11 @@ public class BundleKeyStore {
     }
 
     public String getKsPassword() {
-        return ksPassword;
+        return ksPassword.getPlainText();
     }
 
     public String getKsPkPassword() {
-        return ksPkPassword;
+        return ksPkPassword.getPlainText();
     }
 
     public String getKsPkAlias() {
@@ -285,12 +309,33 @@ public class BundleKeyStore {
      * @return true is the key store is still valid.
      */
     public synchronized boolean isValid() {
-        boolean ret = false;
+        boolean notExpired = false;
+        boolean fileExists = keystoreFileExists();
+        boolean keysExists = false;
+
         if (dateValidity != null) {
             Calendar validity = Calendar.getInstance();
             validity.setTime(dateValidity);
-            ret = Calendar.getInstance().compareTo(validity) <= 0;
+            notExpired = Calendar.getInstance().compareTo(validity) <= 0;
         }
-        return ret;
+        if(fileExists) {
+            try {
+                KeyStore ks = loadKeyStore(keystore, ksPassword.getPlainText());
+                keysExists = ks.getKey(ksPkAlias, ksPkPassword.getPlainText().toCharArray()) != null;
+            } catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException
+                    | UnrecoverableKeyException e) {
+                LOG.log(WARNING, "THe keystore is not accessible", e);
+                keysExists = false;
+            }
+        }
+        return notExpired && fileExists && keysExists;
+    }
+
+    /**
+     *
+     * @return true if the keystore file exists and is readable.
+     */
+    private boolean keystoreFileExists() {
+        return keystore != null  && keystore.exists() && keystore.canRead();
     }
 }
