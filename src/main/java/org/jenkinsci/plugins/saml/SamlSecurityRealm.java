@@ -19,6 +19,7 @@ package org.jenkinsci.plugins.saml;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Extension;
+import hudson.Util;
 import hudson.security.GroupDetails;
 import hudson.security.UserMayOrMayNotExistException;
 import hudson.util.FormValidation;
@@ -44,6 +45,7 @@ import org.springframework.dao.DataAccessException;
 import org.pac4j.saml.profile.SAML2Profile;
 
 import javax.annotation.Nonnull;
+import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -240,9 +242,12 @@ public class SamlSecurityRealm extends SecurityRealm {
      * @param referer  referer.
      * @return the http response.
      */
-    public HttpResponse doCommenceLogin(final StaplerRequest request, final StaplerResponse response, @Header("Referer") final String referer) {
+    public HttpResponse doCommenceLogin(final StaplerRequest request, final StaplerResponse response, @QueryParameter
+            String from, @Header("Referer") final String referer) {
         LOG.fine("SamlSecurityRealm.doCommenceLogin called. Using consumerServiceUrl " + getSamlPluginConfig().getConsumerServiceUrl());
-        request.getSession().setAttribute(REFERER_ATTRIBUTE, referer);
+
+        String redirectOnFinish = calculateSafeRedirect(from, referer);
+        request.getSession().setAttribute(REFERER_ATTRIBUTE, redirectOnFinish);
 
         RedirectAction action = new SamlRedirectActionWrapper(getSamlPluginConfig(), request, response).get();
         if (action.getType() == RedirectType.REDIRECT) {
@@ -257,6 +262,28 @@ public class SamlSecurityRealm extends SecurityRealm {
     }
 
     /**
+     * Check parameters "from" and "referer" to decide where is the safe URL to be redirected.
+     * @param from http request "from" parameter.
+     * @param referer referer header.
+     * @return a safe URL to be redirected.
+     */
+    private String calculateSafeRedirect(String from, String referer) {
+        String redirectURL;
+        String rootUrl = Jenkins.getInstance().getRootUrl();
+        if (from != null && Util.isSafeToRedirectTo(from)) {
+            redirectURL = from;
+        } else {
+            if (referer != null && (referer.startsWith(rootUrl) || Util.isSafeToRedirectTo(referer))) {
+                redirectURL = referer;
+            } else {
+                redirectURL = rootUrl;
+            }
+        }
+        LOG.fine("Safe URL redirection: " + redirectURL);
+        return redirectURL;
+    }
+
+    /**
      * /securityRealm/finishLogin
      *
      * @param request  http request.
@@ -266,7 +293,12 @@ public class SamlSecurityRealm extends SecurityRealm {
     @RequirePOST
     public HttpResponse doFinishLogin(final StaplerRequest request, final StaplerResponse response) {
         LOG.finer("SamlSecurityRealm.doFinishLogin called");
+        String referer = (String) request.getSession().getAttribute(REFERER_ATTRIBUTE);
+        // redirect back to original page
+        String redirectUrl = referer != null ? referer : baseUrl();
+        recreateSession(request);
         logSamlResponse(request);
+
         boolean saveUser = false;
 
         SAML2Profile saml2Profile = new SamlProfileWrapper(getSamlPluginConfig(), request, response).get();
@@ -312,14 +344,24 @@ public class SamlSecurityRealm extends SecurityRealm {
         }
 
         SecurityListener.fireLoggedIn(userDetails.getUsername());
-
-        // redirect back to original page
-        String referer = (String) request.getSession().getAttribute(REFERER_ATTRIBUTE);
-        String redirectUrl = referer != null ? referer : baseUrl();
         return HttpResponses.redirectTo(redirectUrl);
     }
 
-    
+    /**
+     * check if a request contains a session, if so, it invalidate the session and create new one to avoid session
+     * fixation.
+     * @param request request.
+     */
+    private void recreateSession(StaplerRequest request) {
+        HttpSession session = request.getSession(false);
+        if(session != null){
+            LOG.finest("Invalidate previous session");
+            // avoid session fixation
+            session.invalidate();
+        }
+        request.getSession(true);
+    }
+
     private boolean modifyUserSamlCustomAttributes(User user, SAML2Profile profile) {
         boolean saveUser = false;
         if(!getSamlCustomAttributes().isEmpty() && user != null){
