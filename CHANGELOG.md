@@ -1,5 +1,7 @@
 Changelog
 -------------------
+* 1.0.7 (Jun 25, 2018)
+  * [SECURITY-916 / CVE-2018-1000602](https://jenkins.io/security/advisory/2018-06-25/) HTTP session fixation vulnerability in SAML Plugin
 * 1.0.6 (Jun 13, 2018)
   * [JENKINS-50749](https://issues.jenkins-ci.org/browse/JENKINS-50749) SAMLException: No valid subject assertion found in response (Azure)
   * [JENKINS-50004](https://issues.jenkins-ci.org/browse/JENKINS-50004) No more Oops!!! errors
