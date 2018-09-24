@@ -18,7 +18,12 @@ import java.util.logging.Logger;
 @Extension
 public class UpdateMetadataFromURLPeriodicWork extends AsyncAperiodicWork {
     private static final Logger LOG = Logger.getLogger(UpdateMetadataFromURLPeriodicWork.class.getName());
-    private boolean scheduleedOnce;
+    /**
+     * property to set the initial delay of the AsyncAperiodicWork.
+     * -Dorg.jenkinsci.plugins.saml.UpdateMetadataFromURLPeriodicWork.initialDelay=MILLISECONDS
+     */
+    public static final String INITIAL_DELAY_PROPERTY = UpdateMetadataFromURLPeriodicWork.class.getName() + ".initialDelay";
+    public static final long INITIAL_DELAY = Long.valueOf(System.getProperty(INITIAL_DELAY_PROPERTY, "10000"));
 
     /**
      * {@inheritDoc}
@@ -36,11 +41,16 @@ public class UpdateMetadataFromURLPeriodicWork extends AsyncAperiodicWork {
         long ret = getConfiguredPeriod();
         if (ret == 0) {
             ret = TimeUnit.MINUTES.toMillis(10);
-        } else if (!scheduleedOnce){
-            ret = 10000;
         }
-        scheduleedOnce = true;
         return ret;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getInitialDelay() {
+        return INITIAL_DELAY;
     }
 
     /**
