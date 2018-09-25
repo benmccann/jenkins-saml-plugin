@@ -23,7 +23,7 @@ public class UpdateMetadataFromURLPeriodicWork extends AsyncAperiodicWork {
      * -Dorg.jenkinsci.plugins.saml.UpdateMetadataFromURLPeriodicWork.initialDelay=MILLISECONDS
      */
     public static final String INITIAL_DELAY_PROPERTY = UpdateMetadataFromURLPeriodicWork.class.getName() + ".initialDelay";
-    public static final long INITIAL_DELAY = Long.valueOf(System.getProperty(INITIAL_DELAY_PROPERTY, "10000"));
+    public static final long INITIAL_DELAY = Long.parseLong(System.getProperty(INITIAL_DELAY_PROPERTY, "10000"));
 
     /**
      * {@inheritDoc}
