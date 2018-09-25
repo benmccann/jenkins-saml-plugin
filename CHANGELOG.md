@@ -1,6 +1,6 @@
 Changelog
 -------------------
-* 1.0.8 (Sep 25 2018)
+* 1.0.9 (Sep 25 2018)
   * [JENKINS-53487](https://issues.jenkins-ci.org/browse/JENKINS-53487) Periodic Update Occurs Too Frequently
 * 1.0.7 (Jun 25, 2018)
   * [SECURITY-916 / CVE-2018-1000602](https://jenkins.io/security/advisory/2018-06-25/) HTTP session fixation vulnerability in SAML Plugin
