@@ -5,6 +5,8 @@ When you face an issue you could try to enable a logger to these two packages on
     * org.jenkinsci.plugins.saml - FINEST
     * org.pac4j - FINE
     
+**If you have configured the Jenkins proxy setting, and you do not want to use the proxy to connect to your IdP you have to add your IdP to no-proxy hosts**
+    
 **IdP Metadata**
 
 The IdP metadata should looks like this one, the main data are the `entityID`, `IDPSSODescriptor` section, and `SingleSignOnService` the three sections are needed.
