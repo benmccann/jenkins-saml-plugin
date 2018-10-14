@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.saml;
 
 import hudson.Extension;
+import hudson.ProxyConfiguration;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
@@ -13,10 +14,8 @@ import org.kohsuke.stapler.QueryParameter;
 import javax.annotation.Nonnull;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.File;
@@ -129,7 +128,7 @@ public class IdpMetadataConfiguration extends AbstractDescribableImpl<IdpMetadat
      */
     public void updateIdPMetadata() throws IOException {
         try {
-            URLConnection urlConnection = new URL(url).openConnection();
+            URLConnection urlConnection = ProxyConfiguration.open(new URL(url));
             try (InputStream in = urlConnection.getInputStream()) {
                 TransformerFactory tf = TransformerFactory.newInstance();
                 Transformer transformer = tf.newTransformer();
@@ -231,7 +230,7 @@ public class IdpMetadataConfiguration extends AbstractDescribableImpl<IdpMetadat
         public FormValidation doTestIdpMetadataURL(@QueryParameter("url") String url) {
             URLConnection urlConnection = null;
             try {
-                urlConnection = new URL(url).openConnection();
+                urlConnection = ProxyConfiguration.open(new URL(url));
             } catch (IOException e) {
                 LOG.log(Level.SEVERE, e.getMessage(), e);
                 return FormValidation.error(NOT_POSSIBLE_TO_GET_THE_METADATA + url);
