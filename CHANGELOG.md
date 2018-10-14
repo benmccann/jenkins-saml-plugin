@@ -1,5 +1,8 @@
 Changelog
 -------------------
+* 1.1.0 (Oct 15 2018)
+  * [JENKINS-53748](https://issues.jenkins-ci.org/browse/JENKINS-53748) SAML plugin skips Jenkins Proxy Configuration, **If you have configured the Jenkins proxy setting, and you do not want to use the proxy to connect to your IdP you have to add your IdP to no-proxy hosts**
+  
 * 1.0.9 (Sep 25 2018)
   * [JENKINS-53487](https://issues.jenkins-ci.org/browse/JENKINS-53487) Periodic Update Occurs Too Frequently
 * 1.0.7 (Jun 25, 2018)
