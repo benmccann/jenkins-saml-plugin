@@ -7,7 +7,7 @@ When you face an issue you could try to enable a logger to these two packages on
     
 **If you have configured the Jenkins proxy setting, and you do not want to use the proxy to connect to your IdP you have to add your IdP to no-proxy hosts**
     
-**IdP Metadata**
+### IdP Metadata
 
 The IdP metadata should looks like this one, the main data are the `entityID`, `IDPSSODescriptor` section, and `SingleSignOnService` the three sections are needed.
 
@@ -36,7 +36,7 @@ The IdP metadata should looks like this one, the main data are the `entityID`, `
 </EntityDescriptor>
 ```
 
-**SAMLResponse**
+### SAMLResponse
 
 This is an example of SAMLResponse, it is the message sent by the IdP to Jenkins, it should contains an `Assertion` with signature details if it is supported by the IdP, a `Subject` with the request details, `Conditions` with the validity of the session, `AuthnStatement` with the session details, finally a `AttributeStatement` with the attributes sent by the IdP.
 
@@ -110,7 +110,7 @@ This is an example of SAMLResponse, it is the message sent by the IdP to Jenkins
 </Response>
 ```
 
-**SAMLException: Identity provider has no single sign on service available for the selected**
+### SAMLException: Identity provider has no single sign on service available for the selected
 
 You have to check your IdP metadata contains the section `SingleSignOnService`
 
@@ -119,7 +119,7 @@ org.pac4j.saml.exceptions.SAMLException: Identity provider has no single sign on
 	at org.pac4j.saml.context.SAML2MessageContext.getIDPSingleSignOnService(SAML2MessageContext.java:93)
 ```
 
-**Azure AD**
+### Azure AD
 
 After leaving the system for some period of time (like overnight) and trying to log in again you get this error
 
@@ -157,7 +157,7 @@ at java.lang.Thread.run(Thread.java:748)
 * Enable the advanced "force authentication" setting is another workaround.
  
 
-**Identity provider has no single sign on service available for the selected...**
+### Identity provider has no single sign on service available for the selected...
 
 * Check the SP EntryID configured on the IdP
 * Check the binding methods supported on your IdP
@@ -182,7 +182,7 @@ org.pac4j.saml.exceptions.SAMLException: Identity provider has no single sign on
 	at org.kohsuke.stapler.Stapler.tryInvoke(Stapler.java:715)
 ```
 
-**Identity provider does not support encryption settings**
+### Identity provider does not support encryption settings
 
 * Check the encryption methods, signing methods, and keys types supported by your IdP and set the encryption settings correctly  
 * Downgrade to 0.14 version, if it works, then enable encryption on that version to be sure that this is the issue
@@ -211,7 +211,7 @@ Caused by: java.lang.IllegalArgumentException: Illegal base64 character d
     at org.jenkinsci.plugins.saml.SamlSecurityRealm.doFinishLogin(SamlSecurityRealm.java:258)
 ```
 
-** The SAMLResponse is not correct bsae64 encode **
+### The SAMLResponse is not correct bsae64 encode
 
 The SAMLResponse message is not valid because the `SAMLResponse` value is not in Base64 format or it is corrupted.
 
@@ -226,7 +226,7 @@ Caused by: java.lang.IllegalStateException: org.pac4j.saml.exceptions.SAMLExcept
 	... 77 more
 ```
 
-** There is no SAMLResponse parameter in the POST message **
+### There is no SAMLResponse parameter in the POST message
 
 The response message should have a parameter named `SAMLResponse` that should be the XML of the SAMLResponse in Base64 format.
 
@@ -239,7 +239,7 @@ Caused by: org.opensaml.messaging.decoder.MessageDecodingException: Request did 
 	... 87 more
 ```
 
-** No valid subject assertion found in response **
+### No valid subject assertion found in response
 
 Check that the `SP Entry ID` it is the same in the SP (Jenkins) and IdP, by defaulr Jenkins uses `JENKINS_URL/securityRealm/finishLogin` you can change this value if you use the SAML Plugin's Advanced Setting named "SP Entity ID".
 
@@ -270,4 +270,15 @@ at winstone.BoundedExecutorService$1.run(BoundedExecutorService.java:77)
 at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149) 
 at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624) 
 at java.lang.Thread.run(Thread.java:748)
+```
+### Authentication issue instant is too old or in the future
+
+There is a workaround for this it is to decrease "Advanced Configuration/Maximum Session Lifetime" to a lower value than your token validity, then set "Maximum Authentication Lifetime" near to your token validity. Another workaround is to set "Advanced Configuration/Force Authentication" but this will as for login everytime the session expires.
+
+```
+Oct 26, 2018 9:08:44 PM org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator validateSamlSSOResponseOct 26, 2018 9:08:44 PM org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator validateSamlSSOResponse
+
+SEVERE: Current assertion validation failed, continue with the next oneorg.pac4j.saml.exceptions.SAMLException: Authentication issue instant is too old or in the future at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validateAuthenticationStatements(SAML2DefaultResponseValidator.java:620) at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validateAssertion(SAML2DefaultResponseValidator.java:393) at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validateSamlSSOResponse(SAML2DefaultResponseValidator.java:302) at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validate(SAML2DefaultResponseValidator.java:138) at org.pac4j.saml.sso.impl.SAML2WebSSOMessageReceiver.receiveMessage(SAML2WebSSOMessageReceiver.java:77) at org.pac4j.saml.sso.impl.SAML2WebSSOProfileHandler.receive(SAML2WebSSOProfileHandler.java:35) at org.pac4j.saml.client.SAML2Client.retrieveCredentials(SAML2Client.java:225) at org.pac4j.saml.client.SAML2Client.retrieveCredentials(SAML2Client.java:60) at org.pac4j.core.client.IndirectClient.getCredentials(IndirectClient.java:106) at org.jenkinsci.plugins.saml.SamlProfileWrapper.process(SamlProfileWrapper.java:55) at org.jenkinsci.plugins.saml.SamlProfileWrapper.process(SamlProfileWrapper.java:35) at org.jenkinsci.plugins.saml.OpenSAMLWrapper.get(OpenSAMLWrapper.java:64) at org.jenkinsci.plugins.saml.SamlSecurityRealm.doFinishLogin(SamlSecurityRealm.java:304) at 
+....
+org.eclipse.jetty.server.Server.handle(Server.java:531) at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:352) at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:260) at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:281) at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:102) at org.eclipse.jetty.io.ChannelEndPoint$2.run(ChannelEndPoint.java:118) at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:333) at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:310) at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:168) at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:126) at org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:366) at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:762) at org.eclipse.jetty.util.thread.QueuedThreadPool$2.run(QueuedThreadPool.java:680) at java.lang.Thread.run(Thread.java:748)
 ```
