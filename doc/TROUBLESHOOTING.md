@@ -276,9 +276,33 @@ at java.lang.Thread.run(Thread.java:748)
 There is a workaround for this it is to decrease "Advanced Configuration/Maximum Session Lifetime" to a lower value than your token validity, then set "Maximum Authentication Lifetime" near to your token validity. Another workaround is to set "Advanced Configuration/Force Authentication" but this will as for login everytime the session expires.
 
 ```
-Oct 26, 2018 9:08:44 PM org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator validateSamlSSOResponseOct 26, 2018 9:08:44 PM org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator validateSamlSSOResponse
-
-SEVERE: Current assertion validation failed, continue with the next oneorg.pac4j.saml.exceptions.SAMLException: Authentication issue instant is too old or in the future at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validateAuthenticationStatements(SAML2DefaultResponseValidator.java:620) at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validateAssertion(SAML2DefaultResponseValidator.java:393) at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validateSamlSSOResponse(SAML2DefaultResponseValidator.java:302) at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validate(SAML2DefaultResponseValidator.java:138) at org.pac4j.saml.sso.impl.SAML2WebSSOMessageReceiver.receiveMessage(SAML2WebSSOMessageReceiver.java:77) at org.pac4j.saml.sso.impl.SAML2WebSSOProfileHandler.receive(SAML2WebSSOProfileHandler.java:35) at org.pac4j.saml.client.SAML2Client.retrieveCredentials(SAML2Client.java:225) at org.pac4j.saml.client.SAML2Client.retrieveCredentials(SAML2Client.java:60) at org.pac4j.core.client.IndirectClient.getCredentials(IndirectClient.java:106) at org.jenkinsci.plugins.saml.SamlProfileWrapper.process(SamlProfileWrapper.java:55) at org.jenkinsci.plugins.saml.SamlProfileWrapper.process(SamlProfileWrapper.java:35) at org.jenkinsci.plugins.saml.OpenSAMLWrapper.get(OpenSAMLWrapper.java:64) at org.jenkinsci.plugins.saml.SamlSecurityRealm.doFinishLogin(SamlSecurityRealm.java:304) at 
+Oct 26, 2018 9:08:44 PM org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator validateSamlSSOResponse
+SEVERE: Current assertion validation failed, continue with the next oneorg.pac4j.saml.exceptions.SAMLException: Authentication issue instant is too old or in the future
+  at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validateAuthenticationStatements(SAML2DefaultResponseValidator.java:620)
+  at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validateAssertion(SAML2DefaultResponseValidator.java:393)
+  at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validateSamlSSOResponse(SAML2DefaultResponseValidator.java:302)
+  at org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator.validate(SAML2DefaultResponseValidator.java:138)
+  at org.pac4j.saml.sso.impl.SAML2WebSSOMessageReceiver.receiveMessage(SAML2WebSSOMessageReceiver.java:77)
+  at org.pac4j.saml.sso.impl.SAML2WebSSOProfileHandler.receive(SAML2WebSSOProfileHandler.java:35)
+  at org.pac4j.saml.client.SAML2Client.retrieveCredentials(SAML2Client.java:225)
+  at org.pac4j.saml.client.SAML2Client.retrieveCredentials(SAML2Client.java:60)
+  at org.pac4j.core.client.IndirectClient.getCredentials(IndirectClient.java:106)
+  at org.jenkinsci.plugins.saml.SamlProfileWrapper.process(SamlProfileWrapper.java:55)
+  at org.jenkinsci.plugins.saml.SamlProfileWrapper.process(SamlProfileWrapper.java:35)
+  at org.jenkinsci.plugins.saml.OpenSAMLWrapper.get(OpenSAMLWrapper.java:64)
+  at org.jenkinsci.plugins.saml.SamlSecurityRealm.doFinishLogin(SamlSecurityRealm.java:304)
 ....
-org.eclipse.jetty.server.Server.handle(Server.java:531) at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:352) at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:260) at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:281) at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:102) at org.eclipse.jetty.io.ChannelEndPoint$2.run(ChannelEndPoint.java:118) at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:333) at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:310) at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:168) at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:126) at org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:366) at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:762) at org.eclipse.jetty.util.thread.QueuedThreadPool$2.run(QueuedThreadPool.java:680) at java.lang.Thread.run(Thread.java:748)
+  at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:352)
+  at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:260)
+  at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:281)
+  at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:102)
+  at org.eclipse.jetty.io.ChannelEndPoint$2.run(ChannelEndPoint.java:118)
+  at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:333)
+  at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:310)
+  at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:168)
+  at org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:126)
+  at org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:366)
+  at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:762)
+  at org.eclipse.jetty.util.thread.QueuedThreadPool$2.run(QueuedThreadPool.java:680)
+  at java.lang.Thread.run(Thread.java:748)
 ```
