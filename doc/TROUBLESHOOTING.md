@@ -273,7 +273,7 @@ at java.lang.Thread.run(Thread.java:748)
 ```
 ### Authentication issue instant is too old or in the future
 
-There is a workaround for this it is to decrease "Advanced Configuration/Maximum Session Lifetime" to a lower value than your token validity, then set "Maximum Authentication Lifetime" near to your token validity. Another workaround is to set "Advanced Configuration/Force Authentication" but this will as for login everytime the session expires.
+You should check that your `Maximum Authentication Lifetime` setting is the same that your Idp has, if Jenkins has a lower value you will see this error. The solution is to set `Maximum Authentication Lifetime` to your token validity. Another workaround is to set `Advanced Configuration/Force Authentication` but this will as for login everytime the session expires.
 
 ```
 Oct 26, 2018 9:08:44 PM org.pac4j.saml.sso.impl.SAML2DefaultResponseValidator validateSamlSSOResponse
