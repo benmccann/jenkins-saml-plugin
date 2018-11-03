@@ -49,8 +49,13 @@ import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -100,6 +105,8 @@ public class SamlSecurityRealm extends SecurityRealm {
     public static final String ERROR_NOT_KEY_FOUND = "Not key found";
     public static final String SUCCESS = "Success";
     public static final String NOT_POSSIBLE_TO_GET_THE_METADATA = "Was not possible to get the Metadata from the URL";
+    public static final String CHECK_TROUBLESHOOTING_GUIDE = "\nIf you have issues check the troubleshoting guide at https://github.com/jenkinsci/saml-plugin/blob/master/doc/TROUBLESHOOTING.md";
+    public static final String CHECK_MAX_AUTH_LIFETIME = "\nFor more info check 'Maximum Authentication Lifetime' at https://github.com/jenkinsci/saml-plugin/blob/master/doc/CONFIGURE.md#configuring-plugin-settings";
 
     /**
      * configuration settings.
@@ -300,8 +307,16 @@ public class SamlSecurityRealm extends SecurityRealm {
         logSamlResponse(request);
 
         boolean saveUser = false;
+        SAML2Profile saml2Profile = null;
 
-        SAML2Profile saml2Profile = new SamlProfileWrapper(getSamlPluginConfig(), request, response).get();
+        try {
+            saml2Profile = new SamlProfileWrapper(getSamlPluginConfig(), request, response).get();
+        } catch (BadCredentialsException e){
+            LOG.log(Level.WARNING, "Unable to validate the SAML Response: " + e.getMessage()
+                    + CHECK_MAX_AUTH_LIFETIME
+                    + CHECK_TROUBLESHOOTING_GUIDE, e);
+            return HttpResponses.redirectTo(getEffectiveLogoutUrl());
+        }
 
         // getId and possibly convert, based on settings
         String username = loadUserName(saml2Profile);
@@ -313,10 +328,9 @@ public class SamlSecurityRealm extends SecurityRealm {
         // set session expiration, if needed.
 
         if (getAdvancedConfiguration() != null && getAdvancedConfiguration().getMaximumSessionLifetime() != null) {
-            request.getSession().setAttribute(
-                    EXPIRATION_ATTRIBUTE,
-                    System.currentTimeMillis() + 1000 * getAdvancedConfiguration().getMaximumSessionLifetime()
-            );
+            long maxSeLT = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(getAdvancedConfiguration().getMaximumSessionLifetime());
+            request.getSession().setAttribute(EXPIRATION_ATTRIBUTE, maxSeLT);
+            logMaxSessionTime(maxSeLT);
         }
 
         SamlAuthenticationToken samlAuthToken = new SamlAuthenticationToken(userDetails, request.getSession());
@@ -345,6 +359,26 @@ public class SamlSecurityRealm extends SecurityRealm {
 
         SecurityListener.fireLoggedIn(userDetails.getUsername());
         return HttpResponses.redirectTo(redirectUrl);
+    }
+
+    private String getEffectiveLogoutUrl() {
+        return StringUtils.isNotBlank(getLogoutUrl()) ? getLogoutUrl() : Jenkins.getInstance().getRootUrl() + SamlLogoutAction.POST_LOGOUT_URL;
+    }
+
+    /**
+     * log some data about the session expired times and SAML token validity, also point to the documentation in case of issues.
+     * @param maxSeLT timestamp when the session expires.
+     */
+    private void logMaxSessionTime(long maxSeLT) {
+        if(LOG.isLoggable(Level.FINER)){
+            DateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            LOG.finer("Jenkins session will expire at " + sdf.format(new Date(maxSeLT)));
+            LOG.finer("Idp session will not be valid for Jenkins after " + sdf.format(new Date(System.currentTimeMillis()
+                    + TimeUnit.SECONDS.toMillis(getMaximumAuthenticationLifetime())))
+                    + CHECK_MAX_AUTH_LIFETIME
+                    + CHECK_TROUBLESHOOTING_GUIDE);
+        }
     }
 
     /**
@@ -580,14 +614,13 @@ public class SamlSecurityRealm extends SecurityRealm {
         if (Jenkins.getInstance().hasPermission(Jenkins.READ) && StringUtils.isBlank(getLogoutUrl())) {
             return super.getPostLogOutUrl(req, auth);
         }
-        return StringUtils.isNotBlank(getLogoutUrl()) ? getLogoutUrl() : Jenkins.getInstance().getRootUrl() + SamlLogoutAction.POST_LOGOUT_URL;
+        return getEffectiveLogoutUrl();
     }
 
     @Override
     public void doLogout(StaplerRequest req, StaplerResponse rsp) throws IOException, javax.servlet.ServletException {
         super.doLogout(req, rsp);
         LOG.log(Level.FINEST, "Here we could do the SAML Single Logout");
-        //TODO JENKINS-42448
     }
 
     @Override
