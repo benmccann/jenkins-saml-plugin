@@ -1,5 +1,7 @@
 Changelog
 -------------------
+* 1.1.1 (Nov 3 2018)
+  * [JENKINS-54275](https://issues.jenkins-ci.org/browse/JENKINS-54275) Improvements to manage 'Authentication issue instant is too old' errors
 * 1.1.0 (Oct 15 2018)
   * [JENKINS-53748](https://issues.jenkins-ci.org/browse/JENKINS-53748) SAML plugin skips Jenkins Proxy Configuration, **If you have configured the Jenkins proxy setting, and you do not want to use the proxy to connect to your IdP you have to add your IdP to no-proxy hosts**
   
