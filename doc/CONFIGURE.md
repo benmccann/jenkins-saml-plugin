@@ -76,7 +76,7 @@ Not all IdPs use the same terminology, these are the fields for some common IdPs
 
 ### OneLogin
 
-These are the fields for the OneLogin SAML Test (IdP) app template. Other app templates might use different names, see [their docs on the SAML connector](https://support.onelogin.com/hc/en-us/articles/202673944-How-to-Use-the-OneLogin-SAML-Test-Connector) for more information.
+These are the fields for the OneLogin SAML Test (IdP) app template. Other app templates might use different names, see [their docs on the SAML connector](https://onelogin.service-now.com/support?id=kb_article&sys_id=93f95543db109700d5505eea4b96198f) for more information.
 
 * SAML Consumer URL
 * SAML Audience
