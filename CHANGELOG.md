@@ -1,5 +1,11 @@
 Changelog
 -------------------
+* 1.1.2 (Dec 16 2018)
+  * [JENKINS-55216](https://issues.jenkins-ci.org/browse/JENKINS-55216) Remove MaximumSessionLifetime setting
+  * [JENKINS-55205](https://issues.jenkins-ci.org/browse/JENKINS-55205) Review findbugs error with some OS+JDK
+  * [JENKINS-55175](https://issues.jenkins-ci.org/browse/JENKINS-55175) SAML Plugin fails PCT in Java 11
+  * [JENKINS-54247](https://issues.jenkins-ci.org/browse/JENKINS-54247) Add to TROUBLESHOOTING how to backup/restore current keys
+
 * 1.1.1 (Nov 3 2018)
   * [JENKINS-54275](https://issues.jenkins-ci.org/browse/JENKINS-54275) Improvements to manage 'Authentication issue instant is too old' errors
 * 1.1.0 (Oct 15 2018)
