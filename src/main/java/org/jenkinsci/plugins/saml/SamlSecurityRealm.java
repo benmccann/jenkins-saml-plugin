@@ -97,7 +97,6 @@ public class SamlSecurityRealm extends SecurityRealm {
      * URL to process the SAML answers
      */
     public static final String CONSUMER_SERVICE_URL_PATH = "securityRealm/finishLogin";
-    public static final String EXPIRATION_ATTRIBUTE = SamlSecurityRealm.class.getName() + ".expiration";
 
     private static final Logger LOG = Logger.getLogger(SamlSecurityRealm.class.getName());
     private static final String REFERER_ATTRIBUTE = SamlSecurityRealm.class.getName() + ".referer";
@@ -325,13 +324,6 @@ public class SamlSecurityRealm extends SecurityRealm {
 
         // create user data
         SamlUserDetails userDetails = new SamlUserDetails(username, authorities.toArray(new GrantedAuthority[authorities.size()]));
-        // set session expiration, if needed.
-
-        if (getAdvancedConfiguration() != null && getAdvancedConfiguration().getMaximumSessionLifetime() != null) {
-            long maxSeLT = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(getAdvancedConfiguration().getMaximumSessionLifetime());
-            request.getSession().setAttribute(EXPIRATION_ATTRIBUTE, maxSeLT);
-            logMaxSessionTime(maxSeLT);
-        }
 
         SamlAuthenticationToken samlAuthToken = new SamlAuthenticationToken(userDetails);
 
@@ -363,22 +355,6 @@ public class SamlSecurityRealm extends SecurityRealm {
 
     private String getEffectiveLogoutUrl() {
         return StringUtils.isNotBlank(getLogoutUrl()) ? getLogoutUrl() : Jenkins.getInstance().getRootUrl() + SamlLogoutAction.POST_LOGOUT_URL;
-    }
-
-    /**
-     * log some data about the session expired times and SAML token validity, also point to the documentation in case of issues.
-     * @param maxSeLT timestamp when the session expires.
-     */
-    private void logMaxSessionTime(long maxSeLT) {
-        if(LOG.isLoggable(Level.FINER)){
-            DateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
-            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-            LOG.finer("Jenkins session will expire at " + sdf.format(new Date(maxSeLT)));
-            LOG.finer("Idp session will not be valid for Jenkins after " + sdf.format(new Date(System.currentTimeMillis()
-                    + TimeUnit.SECONDS.toMillis(getMaximumAuthenticationLifetime())))
-                    + CHECK_MAX_AUTH_LIFETIME
-                    + CHECK_TROUBLESHOOTING_GUIDE);
-        }
     }
 
     /**

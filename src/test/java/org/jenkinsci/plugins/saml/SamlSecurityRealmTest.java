@@ -164,7 +164,6 @@ public class SamlSecurityRealmTest {
         assertEquals(true, samlSecurityRealm.getAdvancedConfiguration().getForceAuthn());
         assertEquals("anotherContext", samlSecurityRealm.getAdvancedConfiguration().getAuthnContextClassRef());
         assertEquals("spEntityId", samlSecurityRealm.getAdvancedConfiguration().getSpEntityId());
-        assertEquals(86400, samlSecurityRealm.getAdvancedConfiguration().getMaximumSessionLifetime().longValue());
         assertEquals(SAML2_REDIRECT_BINDING_URI, samlSecurityRealm.getBinding());
     }
 

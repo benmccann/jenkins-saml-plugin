@@ -36,7 +36,12 @@ public class SamlAdvancedConfiguration extends AbstractDescribableImpl<SamlAdvan
     private final Boolean forceAuthn;
     private final String authnContextClassRef;
     private final String spEntityId;
-    private final Integer maximumSessionLifetime;
+
+    /**
+     * @deprecated not used anymore
+     */
+    @Deprecated
+    private Integer maximumSessionLifetime;
 
     @DataBoundConstructor
     public SamlAdvancedConfiguration(Boolean forceAuthn,
@@ -46,7 +51,6 @@ public class SamlAdvancedConfiguration extends AbstractDescribableImpl<SamlAdvan
         this.forceAuthn = (forceAuthn != null) ? forceAuthn : false;
         this.authnContextClassRef = Util.fixEmptyAndTrim(authnContextClassRef);
         this.spEntityId = Util.fixEmptyAndTrim(spEntityId);
-        this.maximumSessionLifetime = maximumSessionLifetime;
     }
 
     public Boolean getForceAuthn() {
@@ -61,18 +65,12 @@ public class SamlAdvancedConfiguration extends AbstractDescribableImpl<SamlAdvan
         return spEntityId;
     }
 
-    public Integer getMaximumSessionLifetime() {
-        return maximumSessionLifetime;
-    }
-
-
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer("SamlAdvancedConfiguration{");
         sb.append("forceAuthn=").append(getForceAuthn());
         sb.append(", authnContextClassRef='").append(StringUtils.defaultIfBlank(getAuthnContextClassRef(), "none")).append('\'');
         sb.append(", spEntityId='").append(StringUtils.defaultIfBlank(getSpEntityId(), "none")).append('\'');
-        sb.append(", maximumSessionLifetime=").append(getMaximumSessionLifetime() != null ? getMaximumSessionLifetime() : "none");
         sb.append('}');
         return sb.toString();
     }

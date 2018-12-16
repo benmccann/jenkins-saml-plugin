@@ -36,8 +36,6 @@ __Caution!__ Be aware of case in Authorization strategy as you may lose access r
   * **Force Authentication** - Whether to request the SAML IdP to force (re)authentication of the user, rather than allowing an existing session with the IdP to be reused. Off by default
   * **Authentication Context** - If this field is not empty, request that the SAML IdP uses a specific authentication context, rather than its default. Check with the IdP administrators to find out which authentication contexts are available
   * **SP Entity ID** - If this field is not empty, it overrides the default Entity ID for this Service Provider. Service Provider Entity IDs are usually a URL, like ***http://jenkins.example.org/securityRealm/finishLogin***.
-  * **Maximum Session Lifetime** - you could set the sessions on Jenkins to be shorter than those on your IdP. Number of seconds since the user was authenticated in IdP while his authentication is considering as active. 
-  Default is 24h * 60 min * 60 sec = 86400
 * **Encryption** - If your provider requires encryption, you can specify the keystore details here that should be used.
   * **Keystore path** - The path to the keystore file created with the keygen command.
   * **Key Alias** - The alias used in the -alias argument of the keytool< command.

@@ -11,8 +11,4 @@
     <f:entry title="SP Entity ID" field="spEntityId" help="/plugin/saml/help/spEntityId.html">
         <f:textbox/>
     </f:entry>
-    <f:entry title="Maximum Session Lifetime" field="maximumSessionLifetime"
-             help="/plugin/saml/help/maximumSessionLifetime.html">
-        <f:number clazz="required number" min="0" default="86400"/>
-    </f:entry>
 </j:jelly>
