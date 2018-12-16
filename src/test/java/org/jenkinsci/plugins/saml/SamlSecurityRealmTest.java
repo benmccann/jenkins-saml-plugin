@@ -206,16 +206,6 @@ public class SamlSecurityRealmTest {
         SamlUserDetails userDetails = new SamlUserDetails("tesla",new GrantedAuthority[]{authority});
         assertEquals(userDetails.toString().contains("tesla") && userDetails.toString().contains("role001"), true);
 
-        HttpSession mockHttpsession  = Mockito.mock(HttpSession.class);
-        when(mockHttpsession.getAttribute(SamlSecurityRealm.EXPIRATION_ATTRIBUTE)).thenReturn(1L);
-        SamlAuthenticationToken token = new SamlAuthenticationToken(userDetails,mockHttpsession);
-        assertEquals(token.getPrincipal().equals(userDetails),true);
-
-        mockHttpsession  = Mockito.mock(HttpSession.class);
-        when(mockHttpsession.getAttribute(SamlSecurityRealm.EXPIRATION_ATTRIBUTE)).thenReturn(null);
-        token = new SamlAuthenticationToken(userDetails,mockHttpsession);
-        assertEquals(token.getPrincipal().equals(userDetails),true);
-
         assertThat(new SamlEncryptionData(null,null,null, null, false).toString(), containsString("SamlEncryptionData"));
         assertThat(new SamlEncryptionData("", Secret.fromString(""), Secret.fromString(""), "", false).toString(), containsString("SamlEncryptionData"));
 

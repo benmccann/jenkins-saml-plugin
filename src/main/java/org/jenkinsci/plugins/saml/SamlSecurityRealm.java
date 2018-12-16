@@ -333,7 +333,7 @@ public class SamlSecurityRealm extends SecurityRealm {
             logMaxSessionTime(maxSeLT);
         }
 
-        SamlAuthenticationToken samlAuthToken = new SamlAuthenticationToken(userDetails, request.getSession());
+        SamlAuthenticationToken samlAuthToken = new SamlAuthenticationToken(userDetails);
 
         // initialize security context
         SecurityContextHolder.getContext().setAuthentication(samlAuthToken);

@@ -178,14 +178,11 @@ public class BundleKeyStore {
      * @throws NoSuchAlgorithmException @see NoSuchAlgorithmException
      * @throws CertificateException     @see CertificateException
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value="OBL_UNSATISFIED_OBLIGATION", justification="JENKINS-53692")
     private void saveKeyStore(File keystore, KeyStore ks, String password)
             throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-        FileOutputStream fos;
-        fos = new FileOutputStream(keystore);
-        try {
+        try (FileOutputStream fos = new FileOutputStream(keystore)){
             ks.store(fos, password.toCharArray());
-        } finally {
-            fos.close();
         }
     }
 
