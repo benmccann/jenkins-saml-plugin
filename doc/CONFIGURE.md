@@ -105,6 +105,27 @@ RewriteCond %{HTTP_COOKIE} (JSESSIONID.[a-z0-9]+)
 RewriteRule ^/?logout$ https://idp.example.com/simplesamlphp/saml2/idp/initSLO.php?RelayState=https://jenkins.example.com/ 
 ```
 
+## Backup files considerations
+
+If you do not configure encryption settings The plugin creates a key pair automatically and stores them in "JENKINS_HOME/saml-jenkins-keystore.jks",
+then store the data related into "JENKINS_HOME/saml-jenkins-keystore.xml", you can grab the public key from "JENKINS_HOME/saml-sp-metadata.xml".
+
+If you configured the encryption settings, you only have to copy the key store and the config files (you should maintain
+the secrets also). The default key store is "JENKINS_HOME/saml-jenkins-keystore.jks"
+the configuration is in "JENKINS_HOME/saml-jenkins-keystore.xml" some data is encrypted, so it is not for manual manage,
+and it only is valid for a Jenkins with the same JENKINS_HOME/secrets.
+
+You need the following files to restore the SAML configuration
+
+JENKINS_HOME/config.xml
+JENKINS_HOME/saml-jenkins-keystore.jks
+JENKINS_HOME/saml-jenkins-keystore.xml
+JENKINS_HOME/saml-ipd-metadata.xml
+JENKINS_HOME/saml-sp-metadata.xml
+Also you need the same secret.key, if not the configuration is impossible to unencrypt
+but in any case, you use to make a backup of your full JENKINS_HOME to make your Jenkins instance work properly
+(not only SAML Plugin), I recommend you to take a look at this [CloudBees KB](https://support.cloudbees.com/hc/en-us/articles/216241937-Migration-Guide-CloudBees-Jenkins-Platform-and-CloudBees-Jenkins-Team-)
+
 Troubleshooting
 -------------------
 [Troubleshooting](TROUBLESHOOTING.md)
