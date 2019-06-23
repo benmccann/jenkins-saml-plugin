@@ -29,6 +29,7 @@ import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.saml.SamlSecurityRealm;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
+import org.acegisecurity.Authentication;
 
 import java.util.Date;
 import java.util.logging.Level;
@@ -49,6 +50,7 @@ public class LoginDetailsProperty extends UserProperty {
 
     @DataBoundConstructor
     public LoginDetailsProperty() {
+        //NOOP
     }
 
     public static LoginDetailsProperty currentUserLoginDetails() {
@@ -138,19 +140,24 @@ public class LoginDetailsProperty extends UserProperty {
 
         @Override
         protected void loggedIn(@javax.annotation.Nonnull String username) {
-            SecurityRealm realm = Jenkins.getInstance().getSecurityRealm();
+
+            SecurityRealm realm = Jenkins.get().getSecurityRealm();
             if (!(realm instanceof SamlSecurityRealm)) {
                 return;
             }
 
+
             try {
-                User u = User.get(username);
+                User u = User.getById(username, true);
                 LoginDetailsProperty o = u.getProperty(LoginDetailsProperty.class);
-                if (o == null)
-                    u.addProperty(o = new LoginDetailsProperty());
-                org.acegisecurity.Authentication a = Jenkins.getAuthentication();
-                if (a != null && a.getName().equals(username))
+                if (o == null) {
+                    o = new LoginDetailsProperty();
+                }
+                u.addProperty(o);
+                Authentication a = Jenkins.getAuthentication();
+                if (a.getName().equals(username)) {
                     o.update();    // just for defensive sanity checking
+                }
             } catch (java.io.IOException e) {
                 LOG.log(Level.WARNING, "Failed to record granted authorities", e);
             }
@@ -170,6 +177,7 @@ public class LoginDetailsProperty extends UserProperty {
 
     @Extension
     public static final class DescriptorImpl extends UserPropertyDescriptor {
+        @Override
         public String getDisplayName() {
             return "User Login Properties";
         }

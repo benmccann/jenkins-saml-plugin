@@ -112,7 +112,7 @@ public class SamlPluginConfig {
     }
 
     public String baseUrl() {
-        return Jenkins.getInstance().getRootUrl();
+        return Jenkins.get().getRootUrl();
     }
 
     public IdpMetadataConfiguration getIdpMetadataConfiguration() {
@@ -125,7 +125,7 @@ public class SamlPluginConfig {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("SamlPluginConfig{");
+        final StringBuilder sb = new StringBuilder("SamlPluginConfig{");
         sb.append("idpMetadataConfiguration='").append(getIdpMetadataConfiguration()).append('\'');
         sb.append(", displayNameAttributeName='").append(getDisplayNameAttributeName()).append('\'');
         sb.append(", groupsAttributeName='").append(getGroupsAttributeName()).append('\'');

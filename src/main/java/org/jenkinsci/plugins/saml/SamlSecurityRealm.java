@@ -47,8 +47,6 @@ import org.pac4j.saml.profile.SAML2Profile;
 import javax.annotation.Nonnull;
 import javax.servlet.http.HttpSession;
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -81,6 +79,7 @@ public class SamlSecurityRealm extends SecurityRealm {
     public static final String ERROR_IDP_METADATA_EMPTY = "The IdP Metadata can not be empty.";
     public static final String WARN_RECOMMENDED_TO_SET_THE_GROUPS_ATTRIBUTE = "It is recommended to set the groups attribute.";
     public static final String WARN_RECOMMENDED_TO_SET_THE_USERNAME_ATTRIBUTE = "It is recommended to set the username attribute.";
+    public static final String WARN_RECOMMENDED_TO_SET_THE_EMAIL_ATTRIBUTE = "It is recommended to set the email attribute.";
     public static final String ERROR_NOT_POSSIBLE_TO_READ_KS_FILE = "It is not possible to read the keystore file.";
     public static final String ERROR_CERTIFICATES_COULD_NOT_BE_LOADED = "Any of the certificates in the keystore could not be loaded";
     public static final String ERROR_ALGORITHM_CANNOT_BE_FOUND = "the algorithm used to check the integrity of the keystore cannot be found";
@@ -196,13 +195,11 @@ public class SamlSecurityRealm extends SecurityRealm {
         }
 
         File idpMetadataFile = new File(getIDPMetadataFilePath());
-        if (!idpMetadataFile.exists()){
-            if (idpMetadataConfiguration != null && idpMetadataConfiguration.getXml() != null){
-                try {
-                    idpMetadataConfiguration.createIdPMetadataFile();
-                } catch (IOException e) {
-                    LOG.log(Level.SEVERE, e.getMessage(), e);
-                }
+        if (!idpMetadataFile.exists() && idpMetadataConfiguration != null && idpMetadataConfiguration.getXml() != null){
+            try {
+                idpMetadataConfiguration.createIdPMetadataFile();
+            } catch (IOException e) {
+                LOG.log(Level.SEVERE, e.getMessage(), e);
             }
         }
 
@@ -273,7 +270,7 @@ public class SamlSecurityRealm extends SecurityRealm {
      */
     private String calculateSafeRedirect(String from, String referer) {
         String redirectURL;
-        String rootUrl = Jenkins.getInstance().getRootUrl();
+        String rootUrl = baseUrl();
         if (from != null && Util.isSafeToRedirectTo(from)) {
             redirectURL = from;
         } else {
@@ -352,7 +349,7 @@ public class SamlSecurityRealm extends SecurityRealm {
     }
 
     private String getEffectiveLogoutUrl() {
-        return StringUtils.isNotBlank(getLogoutUrl()) ? getLogoutUrl() : Jenkins.getInstance().getRootUrl() + SamlLogoutAction.POST_LOGOUT_URL;
+            return StringUtils.isNotBlank(getLogoutUrl()) ? getLogoutUrl() : Jenkins.get().getRootUrl() + SamlLogoutAction.POST_LOGOUT_URL;
     }
 
     /**
@@ -418,7 +415,7 @@ public class SamlSecurityRealm extends SecurityRealm {
     }
 
     private String baseUrl() {
-        return Jenkins.getInstance().getRootUrl();
+        return  Jenkins.get().getRootUrl();
     }
 
     /**
@@ -477,7 +474,7 @@ public class SamlSecurityRealm extends SecurityRealm {
         }
 
         // build list of authorities
-        List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+        List<GrantedAuthority> authorities = new ArrayList<>();
         authorities.add(AUTHENTICATED_AUTHORITY);
         if (!groups.isEmpty()) {
             for (Object group : groups) {
@@ -554,11 +551,11 @@ public class SamlSecurityRealm extends SecurityRealm {
     }
 
     static String getIDPMetadataFilePath() {
-        return jenkins.model.Jenkins.getInstance().getRootDir().getAbsolutePath() + IDP_METADATA_FILE_NAME;
+        return Jenkins.get().getRootDir().getAbsolutePath() + IDP_METADATA_FILE_NAME;
     }
 
     static String getSPMetadataFilePath() {
-        return jenkins.model.Jenkins.getInstance().getRootDir().getAbsolutePath() + SP_METADATA_FILE_NAME;
+        return Jenkins.get().getRootDir().getAbsolutePath() + SP_METADATA_FILE_NAME;
     }
 
     /**
@@ -585,7 +582,7 @@ public class SamlSecurityRealm extends SecurityRealm {
         LOG.log(Level.FINE, "Doing Logout {}", auth.getPrincipal());
         // if we just redirect to the root and anonymous does not have Overall read then we will start a login all over again.
         // we are actually anonymous here as the security context has been cleared
-        if (Jenkins.getInstance().hasPermission(Jenkins.READ) && StringUtils.isBlank(getLogoutUrl())) {
+        if (Jenkins.get().hasPermission(Jenkins.READ) && StringUtils.isBlank(getLogoutUrl())) {
             return super.getPostLogOutUrl(req, auth);
         }
         return getEffectiveLogoutUrl();
@@ -644,86 +641,27 @@ public class SamlSecurityRealm extends SecurityRealm {
         }
 
         public FormValidation doCheckLogoutUrl(@QueryParameter String logoutUrl) {
-            if (StringUtils.isEmpty(logoutUrl)) {
-                return FormValidation.ok();
-            }
-            try {
-                new URL(logoutUrl);
-            } catch (MalformedURLException e) {
-                return FormValidation.error(ERROR_MALFORMED_URL, e);
-            }
-            return FormValidation.ok();
+            return SamlFormValidation.checkUrlFormat(logoutUrl);
         }
 
         public FormValidation doCheckDisplayNameAttributeName(@QueryParameter String displayNameAttributeName) {
-            if (StringUtils.isEmpty(displayNameAttributeName)) {
-                return FormValidation.ok();
-            }
-
-            if (StringUtils.isBlank(displayNameAttributeName)) {
-                return FormValidation.error(ERROR_ONLY_SPACES_FIELD_VALUE);
-            }
-
-            return FormValidation.ok();
+            return SamlFormValidation.checkStringFormat(displayNameAttributeName);
         }
 
         public FormValidation doCheckGroupsAttributeName(@QueryParameter String groupsAttributeName) {
-            if (StringUtils.isEmpty(groupsAttributeName)) {
-                return FormValidation.warning(WARN_RECOMMENDED_TO_SET_THE_GROUPS_ATTRIBUTE);
-            }
-
-            if (StringUtils.isBlank(groupsAttributeName)) {
-                return FormValidation.error(ERROR_ONLY_SPACES_FIELD_VALUE);
-            }
-
-            return FormValidation.ok();
+            return SamlFormValidation.checkStringAttributeFormat(groupsAttributeName, SamlSecurityRealm.WARN_RECOMMENDED_TO_SET_THE_GROUPS_ATTRIBUTE, true);
         }
 
         public FormValidation doCheckUsernameAttributeName(@QueryParameter String usernameAttributeName) {
-            if (StringUtils.isEmpty(usernameAttributeName)) {
-                return FormValidation.warning(WARN_RECOMMENDED_TO_SET_THE_USERNAME_ATTRIBUTE);
-            }
-
-            if (StringUtils.isBlank(usernameAttributeName)) {
-                return FormValidation.error(ERROR_ONLY_SPACES_FIELD_VALUE);
-            }
-
-            return FormValidation.ok();
+            return SamlFormValidation.checkStringAttributeFormat(usernameAttributeName, SamlSecurityRealm.WARN_RECOMMENDED_TO_SET_THE_USERNAME_ATTRIBUTE, true);
         }
 
         public FormValidation doCheckEmailAttributeName(@QueryParameter String emailAttributeName) {
-            if (StringUtils.isEmpty(emailAttributeName)) {
-                return FormValidation.ok();
-            }
-
-            if (StringUtils.isBlank(emailAttributeName)) {
-                return FormValidation.error(ERROR_ONLY_SPACES_FIELD_VALUE);
-            }
-
-            return FormValidation.ok();
+            return SamlFormValidation.checkEmailFormat(emailAttributeName, SamlSecurityRealm.WARN_RECOMMENDED_TO_SET_THE_EMAIL_ATTRIBUTE);
         }
 
         public FormValidation doCheckMaximumAuthenticationLifetime(@QueryParameter String maximumAuthenticationLifetime) {
-            if (StringUtils.isEmpty(maximumAuthenticationLifetime)) {
-                return FormValidation.ok();
-            }
-
-            long i = 0;
-            try {
-                i = Long.parseLong(maximumAuthenticationLifetime);
-            } catch (NumberFormatException e) {
-                return FormValidation.error(ERROR_NOT_VALID_NUMBER, e);
-            }
-
-            if (i < 0) {
-                return FormValidation.error(ERROR_NOT_VALID_NUMBER);
-            }
-
-            if (i > Integer.MAX_VALUE) {
-                return FormValidation.error(ERROR_NOT_VALID_NUMBER);
-            }
-
-            return FormValidation.ok();
+            return SamlFormValidation.checkIntegerFormat(maximumAuthenticationLifetime);
         }
     }
 
