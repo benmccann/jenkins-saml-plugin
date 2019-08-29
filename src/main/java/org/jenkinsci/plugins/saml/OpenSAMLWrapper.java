@@ -135,6 +135,10 @@ public abstract class OpenSAMLWrapper<T> {
                 config.setAuthnContextClassRef(samlPluginConfig.getAuthnContextClassRef());
                 config.setComparisonType("exact");
             }
+
+            if(samlPluginConfig.getNameIdPolicyFormat() != null) {
+                config.setNameIdPolicyFormat(samlPluginConfig.getNameIdPolicyFormat());
+            }
         }
 
         config.setForceServiceProviderMetadataGeneration(true);
