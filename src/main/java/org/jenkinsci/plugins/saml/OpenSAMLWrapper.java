@@ -17,6 +17,7 @@ under the License. */
 
 package org.jenkinsci.plugins.saml;
 
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.opensaml.core.config.InitializationException;
@@ -24,7 +25,7 @@ import org.opensaml.core.config.InitializationService;
 import org.pac4j.core.context.J2EContext;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.saml.client.SAML2Client;
-import org.pac4j.saml.client.SAML2ClientConfiguration;
+
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.*;
@@ -86,22 +87,27 @@ public abstract class OpenSAMLWrapper<T> {
         return new J2EContext(request, response);
     }
 
-
     /**
      * @return a SAML2Client object to interact with the IdP service.
      */
     protected SAML2Client createSAML2Client() {
-        final SAML2ClientConfiguration config = new SAML2ClientConfiguration();
+        final SAML2ClientConfigurationCustom config = new SAML2ClientConfigurationCustom();
         config.setIdentityProviderMetadataResource(new SamlFileResource(SamlSecurityRealm.getIDPMetadataFilePath()));
         config.setDestinationBindingType(samlPluginConfig.getBinding());
+        config.setWantsAssertionsSigned(true);
 
-        if (samlPluginConfig.getEncryptionData() != null) {
-            config.setWantsAssertionsSigned(true);
-            config.setKeystorePath(samlPluginConfig.getEncryptionData().getKeystorePath());
-            config.setKeystorePassword(samlPluginConfig.getEncryptionData().getKeystorePasswordPlainText());
-            config.setPrivateKeyPassword(samlPluginConfig.getEncryptionData().getPrivateKeyPasswordPlainText());
-            config.setKeystoreAlias(samlPluginConfig.getEncryptionData().getPrivateKeyAlias());
-            config.setForceSignRedirectBindingAuthnRequest(samlPluginConfig.getEncryptionData().isForceSignRedirectBindingAuthnRequest());
+        SamlEncryptionData encryptionData = samlPluginConfig.getEncryptionData();
+        if (encryptionData != null) {
+            config.setAuthnRequestSigned(encryptionData.isForceSignRedirectBindingAuthnRequest());
+        } else {
+            config.setAuthnRequestSigned(false);
+        }
+
+        if(encryptionData != null && StringUtils.isNotBlank(encryptionData.getKeystorePath())){
+            config.setKeystorePath(encryptionData.getKeystorePath());
+            config.setKeystorePassword(encryptionData.getKeystorePasswordPlainText());
+            config.setPrivateKeyPassword(encryptionData.getPrivateKeyPasswordPlainText());
+            config.setKeystoreAlias(encryptionData.getPrivateKeyAlias());
         } else {
             if (!KS.isValid()) {
                 KS.init();
@@ -113,7 +119,6 @@ public abstract class OpenSAMLWrapper<T> {
             config.setKeystorePassword(KS.getKsPassword());
             config.setPrivateKeyPassword(KS.getKsPkPassword());
             config.setKeystoreAlias(KS.getKsPkAlias());
-            config.setForceSignRedirectBindingAuthnRequest(false);
         }
 
         config.setMaximumAuthenticationLifetime(samlPluginConfig.getMaximumAuthenticationLifetime());

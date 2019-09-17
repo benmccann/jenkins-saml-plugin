@@ -69,8 +69,12 @@ public class SamlEncryptionData extends AbstractDescribableImpl<SamlEncryptionDa
     public SamlEncryptionData(String keystorePath, Secret keystorePassword, Secret privateKeyPassword, String privateKeyAlias,
                               boolean forceSignRedirectBindingAuthnRequest) {
         this.keystorePath = Util.fixEmptyAndTrim(keystorePath);
-        this.keystorePasswordSecret = keystorePassword != null ? keystorePassword : Secret.fromString("");
-        this.privateKeyPasswordSecret = privateKeyPassword != null ? privateKeyPassword : Secret.fromString("");
+        if(keystorePassword != null && StringUtils.isNotEmpty(keystorePassword.getPlainText())){
+            this.keystorePasswordSecret = keystorePassword;
+        }
+        if(privateKeyPassword != null && StringUtils.isNotEmpty(privateKeyPassword.getPlainText())){
+            this.privateKeyPasswordSecret = privateKeyPassword;
+        }
         this.privateKeyAlias = Util.fixEmptyAndTrim(privateKeyAlias);
         this.forceSignRedirectBindingAuthnRequest = forceSignRedirectBindingAuthnRequest;
     }
@@ -79,20 +83,20 @@ public class SamlEncryptionData extends AbstractDescribableImpl<SamlEncryptionDa
         return keystorePath;
     }
 
-    public @Nonnull Secret getKeystorePassword() {
+    public @CheckForNull Secret getKeystorePassword() {
         return keystorePasswordSecret;
     }
 
     public @CheckForNull String getKeystorePasswordPlainText() {
-        return Util.fixEmptyAndTrim(keystorePasswordSecret.getPlainText());
+        return keystorePasswordSecret != null ? Util.fixEmptyAndTrim(keystorePasswordSecret.getPlainText()) : null;
     }
 
-    public @Nonnull Secret getPrivateKeyPassword() {
+    public @CheckForNull Secret getPrivateKeyPassword() {
         return privateKeyPasswordSecret;
     }
 
     public @CheckForNull String getPrivateKeyPasswordPlainText() {
-        return Util.fixEmptyAndTrim(privateKeyPasswordSecret.getPlainText());
+        return privateKeyPasswordSecret != null ? Util.fixEmptyAndTrim(privateKeyPasswordSecret.getPlainText()) : null;
     }
 
     public String getPrivateKeyAlias() {
@@ -143,19 +147,19 @@ public class SamlEncryptionData extends AbstractDescribableImpl<SamlEncryptionDa
         }
 
         public FormValidation doCheckKeystorePath(@QueryParameter String keystorePath) {
-            return SamlFormValidation.checkStringFormat(keystorePath);
+            return SamlFormValidation.checkStringAttributeFormat(keystorePath, WARN_KEYSTORE_NOT_SET, true);
         }
 
         public FormValidation doCheckPrivateKeyAlias(@QueryParameter String privateKeyAlias) {
-            return SamlFormValidation.checkStringFormat(privateKeyAlias);
+            return SamlFormValidation.checkStringAttributeFormat(privateKeyAlias, WARN_PRIVATE_KEY_ALIAS_NOT_SET, true);
         }
 
         public FormValidation doCheckKeystorePassword(@QueryParameter String keystorePassword) {
-            return SamlFormValidation.checkStringFormat(keystorePassword);
+            return SamlFormValidation.checkStringAttributeFormat(keystorePassword, WARN_PRIVATE_KEYSTORE_PASS_NOT_SET, true);
         }
 
         public FormValidation doCheckPrivateKeyPassword(@QueryParameter String privateKeyPassword) {
-            return SamlFormValidation.checkStringFormat(privateKeyPassword);
+            return SamlFormValidation.checkStringAttributeFormat(privateKeyPassword, WARN_PRIVATE_KEY_PASS_NOT_SET, true);
         }
 
         public FormValidation doTestKeyStore(@QueryParameter("keystorePath") String keystorePath,
