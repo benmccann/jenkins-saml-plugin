@@ -25,7 +25,7 @@ under the License.
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>3.49</version>
+    <version>3.55</version>
   </parent>
 
   <artifactId>saml</artifactId>
@@ -44,7 +44,7 @@ under the License.
   <properties>
     <revision>1.1.5</revision>
     <changelist>-SNAPSHOT</changelist>
-    <jenkins.version>2.164.1</jenkins.version>
+    <jenkins.version>2.176.1</jenkins.version>
     <java.level>8</java.level>
     <jcasc.version>1.30</jcasc.version>
   </properties>
@@ -121,7 +121,7 @@ under the License.
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>mailer</artifactId>
-      <version>1.24</version>
+      <version>1.29</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
